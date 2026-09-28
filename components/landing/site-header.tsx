@@ -1,0 +1,123 @@
+'use client'
+
+import { useEffect, useState } from 'react'
+import Link from 'next/link'
+import { ArrowUpRight } from 'lucide-react'
+import { Logo } from '@/components/logo'
+import { Button } from '@/components/ui/button'
+import { Sheet, SheetContent, SheetTitle, SheetTrigger } from '@/components/ui/sheet'
+import { cn } from '@/lib/utils'
+
+const links = [
+  { href: '#services', label: 'Services' },
+  { href: '#video', label: 'Secure video' },
+  { href: '#process', label: 'How it works' },
+  { href: '#pricing', label: 'Billing' },
+]
+
+export function SiteHeader() {
+  const [scrolled, setScrolled] = useState(false)
+  const [open, setOpen] = useState(false)
+
+  useEffect(() => {
+    const onScroll = () => setScrolled(window.scrollY > 24)
+    onScroll()
+    window.addEventListener('scroll', onScroll, { passive: true })
+    return () => window.removeEventListener('scroll', onScroll)
+  }, [])
+
+  return (
+    <header className="fixed inset-x-0 top-0 z-40 px-3 pt-3 sm:px-6">
+      <div
+        className={cn(
+          'mx-auto flex h-14 max-w-7xl items-center justify-between rounded-full px-4 transition-all duration-500 sm:px-6',
+          scrolled ? 'bg-card/80 shadow-[0_8px_30px_-12px_rgb(0_0_0/0.15)] backdrop-blur-xl' : 'bg-transparent',
+        )}
+      >
+        <div className="flex items-center gap-8">
+          <Logo />
+          <nav aria-label="Primary" className="hidden lg:block">
+            <ul className="flex items-center gap-1">
+              {links.map((l) => (
+                <li key={l.href}>
+                  <a
+                    href={l.href}
+                    className="rounded-full px-3 py-1.5 text-sm text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
+                  >
+                    {l.label}
+                  </a>
+                </li>
+              ))}
+            </ul>
+          </nav>
+        </div>
+
+        <div className="flex items-center gap-2">
+          <Link
+            href="/dashboard"
+            className="hidden rounded-full px-3 py-1.5 text-sm transition-colors hover:bg-muted sm:inline-flex"
+          >
+            Sign in
+          </Link>
+          <Button
+            nativeButton={false}
+            render={<Link href="/dashboard" />}
+            className="hidden h-9 rounded-full px-4 sm:inline-flex"
+          >
+            Open portal
+            <ArrowUpRight data-icon="inline-end" />
+          </Button>
+
+          <Sheet open={open} onOpenChange={setOpen}>
+            <SheetTrigger
+              render={
+                <button
+                  type="button"
+                  className="flex items-center gap-2 rounded-full px-2 py-1.5 text-sm lg:hidden"
+                  aria-label="Open menu"
+                />
+              }
+            >
+              <span className="flex w-5 flex-col gap-1" aria-hidden="true">
+                <span className="h-px w-full bg-foreground" />
+                <span className="h-px w-3/4 bg-foreground" />
+              </span>
+              Menu
+            </SheetTrigger>
+            <SheetContent side="top" className="rounded-b-3xl px-6 pt-6 pb-8">
+              <SheetTitle className="sr-only">Navigation</SheetTitle>
+              <Logo />
+              <nav aria-label="Mobile" className="mt-6">
+                <ul className="flex flex-col">
+                  {links.map((l, i) => (
+                    <li
+                      key={l.href}
+                      className="animate-in fade-in-0 slide-in-from-top-2 fill-mode-both duration-500"
+                      style={{ animationDelay: `${i * 60}ms` }}
+                    >
+                      <a
+                        href={l.href}
+                        onClick={() => setOpen(false)}
+                        className="flex items-center justify-between border-b py-4 text-2xl font-medium tracking-tight"
+                      >
+                        {l.label}
+                        <ArrowUpRight className="size-5 text-muted-foreground" />
+                      </a>
+                    </li>
+                  ))}
+                </ul>
+              </nav>
+              <Button
+                nativeButton={false}
+                render={<Link href="/dashboard" />}
+                className="mt-4 h-12 rounded-full text-base"
+              >
+                Open patient portal
+              </Button>
+            </SheetContent>
+          </Sheet>
+        </div>
+      </div>
+    </header>
+  )
+}
