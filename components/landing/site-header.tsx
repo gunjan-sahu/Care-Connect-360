@@ -1,12 +1,11 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useState } from 'react'
 import Link from 'next/link'
 import { ArrowUpRight } from 'lucide-react'
 import { Logo } from '@/components/logo'
 import { Button } from '@/components/ui/button'
 import { Sheet, SheetContent, SheetTitle, SheetTrigger } from '@/components/ui/sheet'
-import { cn } from '@/lib/utils'
 
 const links = [
   { href: '#services', label: 'Services' },
@@ -16,27 +15,14 @@ const links = [
 ]
 
 export function SiteHeader() {
-  const [scrolled, setScrolled] = useState(false)
   const [open, setOpen] = useState(false)
 
-  useEffect(() => {
-    const onScroll = () => setScrolled(window.scrollY > 24)
-    onScroll()
-    window.addEventListener('scroll', onScroll, { passive: true })
-    return () => window.removeEventListener('scroll', onScroll)
-  }, [])
-
   return (
-    <header className="fixed inset-x-0 top-0 z-40 px-3 pt-3 sm:px-6">
-      <div
-        className={cn(
-          'mx-auto flex h-14 max-w-7xl items-center justify-between rounded-full px-4 transition-all duration-500 sm:px-6',
-          scrolled ? 'bg-card/80 shadow-[0_8px_30px_-12px_rgb(0_0_0/0.15)] backdrop-blur-xl' : 'bg-transparent',
-        )}
-      >
+    <header className="fixed inset-x-0 top-0 z-30 px-3 pt-3 sm:px-6 lg:left-[var(--sidebar-space)] lg:transition-[left] lg:duration-500 lg:ease-[cubic-bezier(0.16,1,0.3,1)]">
+      <div className="mx-auto flex h-20 max-w-7xl items-center justify-between rounded-full bg-card px-4 shadow-[0_8px_30px_-12px_rgb(0_0_0/0.15)] sm:px-6">
         <div className="flex items-center gap-8">
           <Logo />
-          <nav aria-label="Primary" className="hidden lg:block">
+          <nav aria-label="Primary" className="hidden xl:block">
             <ul className="flex items-center gap-1">
               {links.map((l) => (
                 <li key={l.href}>
@@ -54,7 +40,7 @@ export function SiteHeader() {
 
         <div className="flex items-center gap-2">
           <Link
-            href="/dashboard"
+            href="/login"
             className="hidden rounded-full px-3 py-1.5 text-sm transition-colors hover:bg-muted sm:inline-flex"
           >
             Sign in

@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useRef, useState, type ElementType, type ReactNode } from 'react'
+import { useEffect, useRef, useState, type ElementType, type ReactNode, type CSSProperties } from 'react'
 import { cn } from '@/lib/utils'
 
 type RevealProps = {
@@ -11,31 +11,36 @@ type RevealProps = {
 }
 
 export function Reveal({ children, className, delay = 0, as: Tag = 'div' }: RevealProps) {
-  const ref = useRef<HTMLElement>(null)
+  const element = useRef<HTMLElement>(null)
   const [visible, setVisible] = useState(false)
 
   useEffect(() => {
-    const node = ref.current
-    if (!node) return
-    const observer = new IntersectionObserver(
-      ([entry]) => {
-        if (entry.isIntersecting) {
-          setVisible(true)
-          observer.disconnect()
-        }
-      },
-      { threshold: 0.15, rootMargin: '0px 0px -40px 0px' },
-    )
-    observer.observe(node)
+    if (!element.current) return
+
+    const observer = new IntersectionObserver(([entry]) => {
+      if (entry.isIntersecting) {
+        setVisible(true)
+        observer.disconnect()
+      }
+    }, {
+      threshold: 0.15,
+      rootMargin: '0px 0px -40px 0px',
+    })
+
+    observer.observe(element.current)
     return () => observer.disconnect()
   }, [])
 
+  const style = {
+    '--reveal-delay': `${delay}ms`,
+  } as CSSProperties
+
   return (
     <Tag
-      ref={ref}
+      ref={element}
       data-visible={visible}
       className={cn('reveal', className)}
-      style={{ '--reveal-delay': `${delay}ms` } as React.CSSProperties}
+      style={style}
     >
       {children}
     </Tag>

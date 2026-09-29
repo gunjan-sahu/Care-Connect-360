@@ -46,11 +46,6 @@ export function VideoRoom() {
     setDraft('')
   }
 
-  const controls = [
-    { on: mic, toggle: () => setMic((v) => !v), On: Mic, Off: MicOff, label: mic ? 'Mute microphone' : 'Unmute microphone' },
-    { on: cam, toggle: () => setCam((v) => !v), On: Video, Off: VideoOff, label: cam ? 'Turn camera off' : 'Turn camera on' },
-  ]
-
   return (
     <div className="grid gap-3 lg:grid-cols-[1fr_auto]">
       <section className="relative min-h-[60svh] overflow-hidden rounded-[1.75rem] bg-foreground lg:min-h-[calc(100svh-7rem)]">
@@ -94,21 +89,31 @@ export function VideoRoom() {
 
         <div className="absolute inset-x-0 bottom-4 flex justify-center">
           <div className="flex items-center gap-2 rounded-full bg-card/85 p-2 backdrop-blur-xl">
-            {controls.map(({ on, toggle, On, Off, label }) => (
-              <button
-                key={label}
-                type="button"
-                onClick={toggle}
-                aria-label={label}
-                aria-pressed={!on}
-                className={cn(
-                  'flex size-12 items-center justify-center rounded-full transition-all duration-300 hover:scale-105',
-                  on ? 'bg-muted' : 'bg-foreground text-background',
-                )}
-              >
-                {on ? <On className="size-5" /> : <Off className="size-5" />}
-              </button>
-            ))}
+            <button
+              type="button"
+              onClick={() => setMic(!mic)}
+              aria-label={mic ? 'Mute microphone' : 'Unmute microphone'}
+              aria-pressed={!mic}
+              className={cn(
+                'flex size-12 items-center justify-center rounded-full transition-all duration-300 hover:scale-105',
+                mic ? 'bg-muted' : 'bg-foreground text-background',
+              )}
+            >
+              {mic ? <Mic className="size-5" /> : <MicOff className="size-5" />}
+            </button>
+
+            <button
+              type="button"
+              onClick={() => setCam(!cam)}
+              aria-label={cam ? 'Turn camera off' : 'Turn camera on'}
+              aria-pressed={!cam}
+              className={cn(
+                'flex size-12 items-center justify-center rounded-full transition-all duration-300 hover:scale-105',
+                cam ? 'bg-muted' : 'bg-foreground text-background',
+              )}
+            >
+              {cam ? <Video className="size-5" /> : <VideoOff className="size-5" />}
+            </button>
             <button
               type="button"
               onClick={() => toast('Screen sharing started')}

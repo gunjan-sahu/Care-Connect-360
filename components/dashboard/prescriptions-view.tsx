@@ -56,10 +56,7 @@ export function PrescriptionsView({ prescriptions }: { prescriptions: Prescripti
           return (
             <li
               key={p.id}
-              className={cn(
-                'group flex animate-in flex-col rounded-[1.75rem] bg-card p-6 fade-in-0 slide-in-from-bottom-3 fill-mode-both duration-700 transition-transform hover:-translate-y-1',
-                p.status === 'Expired' && 'opacity-60',
-              )}
+              className={`group flex animate-in flex-col rounded-[1.75rem] bg-card p-6 fade-in-0 slide-in-from-bottom-3 fill-mode-both duration-700 transition-transform hover:-translate-y-1${cardClass}`}
               style={{ animationDelay: `${i * 90}ms` }}
             >
               <div className="flex items-start justify-between gap-3">

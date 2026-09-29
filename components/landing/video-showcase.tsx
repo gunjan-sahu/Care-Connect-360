@@ -32,12 +32,12 @@ export function VideoShowcase() {
 
         <Reveal delay={120} className="relative min-h-[420px] overflow-hidden rounded-[2rem] bg-card lg:col-span-3">
           <Image
-            src="/images/doctor-call.png"
-            alt="Physician on a secure video consultation"
-            fill
-            sizes="(min-width: 1024px) 60vw, 100vw"
-            className="object-cover transition-transform duration-[2s] hover:scale-105"
-          />
+  src="/images/video-consultation.png.png"
+  alt="Online doctor consultation"
+  fill
+  sizes="(min-width: 1024px) 60vw, 100vw"
+  className="object-cover transition-transform duration-[2s] hover:scale-105"
+/>
           <div className="absolute top-4 left-4 flex items-center gap-2 rounded-full bg-card/80 px-3 py-1.5 text-xs backdrop-blur-md">
             <span className="relative flex size-2">
               <span className="absolute inset-0 animate-pulse-ring rounded-full bg-success" />
@@ -47,20 +47,18 @@ export function VideoShowcase() {
             <Lock className="size-3 text-muted-foreground" aria-hidden="true" />
           </div>
 
-          <div className="absolute top-4 right-4 animate-float rounded-2xl bg-card/85 p-4 backdrop-blur-md">
-            <p className="flex items-center gap-1.5 text-xs text-muted-foreground">
-              <Heart className="size-3.5 text-brand" aria-hidden="true" />
-              Heart rate
-            </p>
-            <p className="mt-1 text-3xl font-medium tracking-tight">
-              72 <span className="text-sm font-normal text-muted-foreground">bpm</span>
-            </p>
-          </div>
+          <div className="absolute top-3 right-3 animate-float rounded-xl bg-card/85 px-3 py-2 backdrop-blur-md">
+  <p className="flex items-center gap-1 text-[10px] text-muted-foreground">
+    <Heart className="size-3 text-brand" aria-hidden="true" />
+    Heart rate
+  </p>
 
-          <div className="absolute right-4 bottom-4 h-28 w-40 overflow-hidden rounded-2xl border-2 border-card shadow-lg sm:h-32 sm:w-48">
-            <Image src="/images/patient-self.png" alt="Patient self view" fill sizes="200px" className="object-cover" />
-          </div>
+  <p className="mt-0.5 text-xl font-medium tracking-tight">
+    72 <span className="text-[10px] font-normal text-muted-foreground">bpm</span>
+  </p>
+</div>
 
+          
           <div className="absolute bottom-4 left-4 flex items-center gap-2 rounded-full bg-card/85 p-1.5 backdrop-blur-md" aria-hidden="true">
             <span className="flex size-10 items-center justify-center rounded-full bg-muted">
               <Mic className="size-4" />

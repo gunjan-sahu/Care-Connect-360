@@ -15,7 +15,11 @@ const tabs = ['Upcoming', 'Completed', 'Cancelled'] as const
 export function AppointmentsView({ appointments, doctors }: { appointments: Appointment[]; doctors: Doctor[] }) {
   const [tab, setTab] = useState<(typeof tabs)[number]>('Upcoming')
   const [items, setItems] = useState(appointments)
-  const list = items.filter((a) => a.status === tab)
+  const list = items.filter((appointment) => appointment.status === tab)
+
+  function countForTab(status: (typeof tabs)[number]) {
+    return items.filter((appointment) => appointment.status === status).length
+  }
 
   function cancel(id: string) {
     setItems((prev) => prev.map((a) => (a.id === id ? { ...a, status: 'Cancelled' } : a)))
@@ -40,7 +44,7 @@ export function AppointmentsView({ appointments, doctors }: { appointments: Appo
               >
                 {t}
                 <span className="ml-1.5 font-mono text-xs text-muted-foreground">
-                  {items.filter((a) => a.status === t).length}
+                  {countForTab(t)}
                 </span>
               </button>
             ))}

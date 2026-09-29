@@ -10,7 +10,6 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog'
-import { cn } from '@/lib/utils'
 
 const services = [
   {
@@ -49,6 +48,7 @@ const services = [
 
 export function Services() {
   const [active, setActive] = useState<(typeof services)[number] | null>(null)
+  const ActiveIcon = active?.icon
 
   return (
     <section id="services" className="scroll-mt-24 px-3 sm:px-6">
@@ -92,14 +92,14 @@ export function Services() {
 
       <Dialog open={active !== null} onOpenChange={(o) => !o && setActive(null)}>
         <DialogContent className="gap-6 rounded-3xl p-6 sm:max-w-md">
-          {active && (
+          {active && ActiveIcon && (
             <>
               <div className="flex size-14 items-center justify-center rounded-2xl bg-brand-soft text-brand">
-                <active.icon className="size-6" aria-hidden="true" />
+                <ActiveIcon className="size-6" aria-hidden="true" />
               </div>
               <DialogHeader>
                 <p className="font-mono text-xs text-muted-foreground">
-                  {active.n} {'—'} {active.tag.toUpperCase()}
+                  {active.n} — {active.tag.toUpperCase()}
                 </p>
                 <DialogTitle className="text-2xl leading-tight font-medium tracking-tight">{active.title}</DialogTitle>
                 <DialogDescription className="leading-relaxed">{active.body}</DialogDescription>
@@ -108,9 +108,7 @@ export function Services() {
                 {active.points.map((p, i) => (
                   <li
                     key={p}
-                    className={cn(
-                      'flex animate-in items-center gap-3 rounded-xl bg-muted px-4 py-3 text-sm fade-in-0 slide-in-from-bottom-2 fill-mode-both duration-500',
-                    )}
+                    className="flex animate-in items-center gap-3 rounded-xl bg-muted px-4 py-3 text-sm fade-in-0 slide-in-from-bottom-2 fill-mode-both duration-500" 
                     style={{ animationDelay: `${150 + i * 80}ms` }}
                   >
                     <Check className="size-4 text-brand" aria-hidden="true" />

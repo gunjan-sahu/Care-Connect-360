@@ -17,7 +17,6 @@ export const metadata: Metadata = {
   title: 'CareConnect360 — Virtual Care, Reimagined',
   description:
     'CareConnect360 is a telemedicine platform for virtual consultations, prescription management, secure video visits and transparent billing.',
-  generator: 'v0.app',
   icons: {
     icon: [
       {

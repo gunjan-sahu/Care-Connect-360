@@ -1,4 +1,9 @@
+//the work of this page is to divded the page into different sections
+//like header, the main landing page
+//kaunsa page kaha rhega vo decide ke liye ye page banaya gya hai
+
 import { SiteHeader } from '@/components/landing/site-header'
+import { LandingShell } from '@/components/landing/landing-shell'
 import { Hero } from '@/components/landing/hero'
 import { Marquee } from '@/components/landing/marquee'
 import { Services } from '@/components/landing/services'
@@ -9,7 +14,7 @@ import { CtaFooter } from '@/components/landing/cta-footer'
 
 export default function HomePage() {
   return (
-    <>
+    <LandingShell>
       <SiteHeader />
       <main>
         <Hero />
@@ -20,6 +25,6 @@ export default function HomePage() {
         <Pricing />
         <CtaFooter />
       </main>
-    </>
+    </LandingShell>
   )
 }

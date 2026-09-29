@@ -24,9 +24,10 @@ export function BillingView({ invoices }: { invoices: Invoice[] }) {
   const [paying, setPaying] = useState<Invoice | null>(null)
   const [loading, setLoading] = useState(false)
 
-  const due = items.filter((i) => i.status === 'Due').reduce((s, i) => s + i.amount - i.covered, 0)
-  const covered = items.reduce((s, i) => s + i.covered, 0)
-  const total = items.reduce((s, i) => s + i.amount, 0)
+  const dueItems = items.filter((item) => item.status === 'Due')
+  const due = dueItems.reduce((sum, item) => sum + item.amount - item.covered, 0)
+  const covered = items.reduce((sum, item) => sum + item.covered, 0)
+  const total = items.reduce((sum, item) => sum + item.amount, 0)
 
   function pay(e: React.FormEvent) {
     e.preventDefault()
