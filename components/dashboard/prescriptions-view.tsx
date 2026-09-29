@@ -56,7 +56,10 @@ export function PrescriptionsView({ prescriptions }: { prescriptions: Prescripti
           return (
             <li
               key={p.id}
-              className={`group flex animate-in flex-col rounded-[1.75rem] bg-card p-6 fade-in-0 slide-in-from-bottom-3 fill-mode-both duration-700 transition-transform hover:-translate-y-1${cardClass}`}
+              className={cn(
+                'group flex animate-in flex-col rounded-[1.75rem] bg-card p-6 fade-in-0 slide-in-from-bottom-3 fill-mode-both duration-700 transition-transform hover:-translate-y-1',
+                p.status === 'Expired' && 'opacity-60',
+              )}
               style={{ animationDelay: `${i * 90}ms` }}
             >
               <div className="flex items-start justify-between gap-3">
@@ -96,8 +99,13 @@ export function PrescriptionsView({ prescriptions }: { prescriptions: Prescripti
                 <Button
                   size="sm"
                   variant={p.status === 'Refill due' ? 'default' : 'outline'}
-                  disabled={p.refillsLeft === 0}
-                  onClick={() => setRefill(p)}
+                  onClick={() =>
+                    p.refillsLeft === 0
+                      ? toast.success('Request sent', {
+                          description: `${p.prescribedBy} will review a renewal for ${p.name}.`,
+                        })
+                      : setRefill(p)
+                  }
                   className={cn('rounded-full', p.status === 'Refill due' && 'bg-brand hover:bg-brand/90')}
                 >
                   <RefreshCw data-icon="inline-start" />
