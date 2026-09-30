@@ -160,7 +160,7 @@ export default function DoctorConsultationPage() {
                 <span className="absolute -top-1 -right-1 flex size-5 items-center justify-center rounded-full bg-brand text-[10px] text-primary-foreground">
                   {rxList.length}
                 </span>
-              )}
+              )} 
             </button>
             <button
               type="button"

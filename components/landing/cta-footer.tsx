@@ -25,7 +25,7 @@ export function CtaFooter() {
               <Button
                 variant="outline"
                 nativeButton={false}
-                render={<Link href="/doctor" />}
+                render={<Link href="/login" />}
                 className="h-12 rounded-full bg-transparent px-6"
               >
                 <Stethoscope data-icon="inline-start" />
@@ -33,7 +33,7 @@ export function CtaFooter() {
               </Button>
               <Button
                 nativeButton={false}
-                render={<Link href="/dashboard" />}
+                render={<Link href="/login" />}
                 className="h-12 rounded-full px-6"
               >
                 Open patient portal

@@ -37,18 +37,9 @@ export function SiteHeader() {
             Explore
           </button>
 
-          <div className="hidden items-center gap-1 rounded-full bg-muted p-1 text-sm lg:flex">
-            <Link href="/dashboard" className="rounded-full px-4 py-1.5 transition-colors hover:bg-card">
-              Patient
-            </Link>
-            <Link href="/doctor" className="rounded-full px-4 py-1.5 transition-colors hover:bg-card">
-              Doctor
-            </Link>
-          </div>
-
           <Link
             href="/login"
-            className="hidden rounded-full px-3 py-1.5 text-sm transition-colors hover:bg-muted sm:inline-flex lg:hidden"
+            className="hidden rounded-full px-3 py-1.5 text-sm transition-colors hover:bg-muted sm:inline-flex"
           >
             Sign in
           </Link>

@@ -90,6 +90,7 @@ export function DashboardShell({ children }: { children: ReactNode }) {
   useEffect(() => {
     const s = getSession()
     if (!s) router.replace('/login')
+    else if (s.role === 'Doctor') router.replace('/doctor')
     else setUser(s)
   }, [router])
 

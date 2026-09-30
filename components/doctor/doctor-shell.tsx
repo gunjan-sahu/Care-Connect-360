@@ -1,10 +1,11 @@
 'use client'
 
-import type { ReactNode } from 'react'
+import { useEffect, useState, type ReactNode } from 'react'
 import Link from 'next/link'
-import { usePathname } from 'next/navigation'
+import { usePathname, useRouter } from 'next/navigation'
 import { CalendarDays, Clock, LayoutGrid, LogOut, Users, Video, Wallet } from 'lucide-react'
 import { doctorProfile } from '@/lib/doctor-data'
+import { clearSession, getSession } from '@/lib/session'
 import { cn } from '@/lib/utils'
 
 const nav = [
@@ -22,7 +23,23 @@ function isActive(pathname: string, href: string) {
 
 export function DoctorShell({ children }: { children: ReactNode }) {
   const pathname = usePathname()
+  const router = useRouter()
+  const [ready, setReady] = useState(false)
   const current = nav.find((n) => isActive(pathname, n.href))
+
+  useEffect(() => {
+    const s = getSession()
+    if (!s) router.replace('/login')
+    else if ((s.role ?? 'Patient') !== 'Doctor') router.replace('/dashboard')
+    else setReady(true)
+  }, [router])
+
+  function signOut() {
+    clearSession()
+    router.replace('/login')
+  }
+
+  if (!ready) return null
 
   return (
     <div className="flex min-h-svh">
@@ -69,23 +86,38 @@ export function DoctorShell({ children }: { children: ReactNode }) {
             <p className="truncate text-sm">{doctorProfile.name}</p>
             <p className="truncate text-xs text-background/50">{doctorProfile.specialty}</p>
           </div>
-          <Link href="/" aria-label="Sign out" className="rounded p-1.5 text-background/60 hover:text-background">
+          <button
+            type="button"
+            onClick={signOut}
+            aria-label="Sign out"
+            className="rounded p-1.5 text-background/60 hover:text-background"
+          >
             <LogOut className="size-4" />
-          </Link>
+          </button>
         </div>
       </aside>
 
       <div className="flex min-w-0 flex-1 flex-col">
         <header className="sticky top-0 z-20 border-b bg-card/90 backdrop-blur">
           <div className="flex h-14 items-center justify-between px-4 sm:px-6">
-            <div>
-              <p className="text-[11px] tracking-wide text-muted-foreground uppercase">Doctor workspace</p>
-              <h1 className="text-base leading-tight font-medium">{current?.label ?? 'Overview'}</h1>
+            <div className="min-w-0">
+              <h1 className="truncate text-base font-medium lg:sr-only">{current?.label ?? 'Overview'}</h1>
+              <p className="hidden text-sm text-muted-foreground lg:block">Doctor workspace</p>
             </div>
-            <span className="flex items-center gap-2 rounded-md bg-brand-soft px-2.5 py-1 text-xs font-medium text-accent-foreground">
-              <span className="size-1.5 rounded-full bg-brand" />
-              Available
-            </span>
+            <div className="flex items-center gap-2">
+              <span className="flex items-center gap-2 rounded-md bg-brand-soft px-2.5 py-1 text-xs font-medium text-accent-foreground">
+                <span className="size-1.5 rounded-full bg-brand" />
+                Available
+              </span>
+              <button
+                type="button"
+                onClick={signOut}
+                className="inline-flex items-center gap-1.5 rounded-md border px-2.5 py-1 text-xs hover:bg-muted lg:hidden"
+              >
+                <LogOut className="size-3.5" aria-hidden="true" />
+                Sign out
+              </button>
+            </div>
           </div>
           <nav aria-label="Doctor mobile" className="no-scrollbar flex gap-1 overflow-x-auto px-3 pb-2 lg:hidden">
             {nav.map((item) => (
