@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import Image from 'next/image'
 import { useRouter } from 'next/navigation'
 import { FilePlus2, Lock, MessageSquare, Mic, MicOff, MonitorUp, PhoneOff, Send, Video, VideoOff } from 'lucide-react'
@@ -17,11 +17,86 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog'
+import { doctorProfile } from '@/lib/doctor-data'
 import { addSharedRx } from '@/lib/shared-rx'
 import { cn } from '@/lib/utils'
 
 type Message = { from: 'patient' | 'me'; text: string }
 type Rx = { drug: string; dosage: string; frequency: string }
+
+const quickReplies = [
+  'Hello, how are you feeling today?',
+  'Any dizziness or headaches?',
+  'Are you taking your medicines on time?',
+  'Let me check your readings',
+  'I will prescribe something for this',
+  'Please rest and drink plenty of water',
+  'Thank you, take care',
+]
+
+function pick(options: string[]) {
+  return options[Math.floor(Math.random() * options.length)]
+}
+
+// The "patient" answers based on what the doctor said
+function patientReply(text: string): string {
+  const t = text.toLowerCase()
+
+  if (/^(hi|hello|hey)\b/.test(t) || t.includes('how are you') || t.includes('feeling'))
+    return pick([
+      'Hello doctor. I am feeling better overall, but a bit tired in the afternoons.',
+      'Hi doctor. Mostly fine, just some tiredness after lunch.',
+      'Hello. Better than last week, though I still get a mild headache sometimes.',
+    ])
+
+  if (t.includes('dizz') || t.includes('headache'))
+    return pick([
+      'Yes, a mild headache in the evenings, mostly when I skip water.',
+      'A little dizziness when I stand up quickly, otherwise fine.',
+      'No dizziness this week, only a light headache twice.',
+    ])
+
+  if (t.includes('medicine') || t.includes('tablet') || t.includes('on time'))
+    return pick([
+      'Yes, I take them every morning. I missed one dose last Sunday.',
+      'Mostly on time. I sometimes forget the evening one.',
+      'Yes doctor, I set an alarm so I do not miss them.',
+    ])
+
+  if (t.includes('reading') || t.includes('bp') || t.includes('pressure'))
+    return pick([
+      'Sure. My last reading this morning was 118 over 76.',
+      'It has been around 120 over 78 this week.',
+      'I have been noting it daily. It looks stable to me.',
+    ])
+
+  if (t.includes('prescribe') || t.includes('prescription'))
+    return pick([
+      'Okay doctor. Should I take it before or after food?',
+      'Thank you. Will there be any side effects I should watch for?',
+      'Alright. For how many days should I continue it?',
+    ])
+
+  if (t.includes('rest') || t.includes('water') || t.includes('sleep') || t.includes('diet'))
+    return pick([
+      'I will try. I usually sleep around 6 hours, I will improve that.',
+      'Understood doctor. I will drink more water and take breaks.',
+      'Okay, I will follow that. Should I avoid salty food too?',
+    ])
+
+  if (t.includes('thank') || t.includes('take care') || t.includes('bye'))
+    return pick([
+      'Thank you so much doctor. Have a good day.',
+      'Thanks doctor. I will follow your advice.',
+      'Thank you. I will message you if anything changes.',
+    ])
+
+  return pick([
+    'I understand, doctor. Could you explain a little more?',
+    'Okay doctor. What should I do next?',
+    'Alright. Is there anything else I should keep in mind?',
+  ])
+}
 
 export default function DoctorConsultationPage() {
   const router = useRouter()
@@ -34,8 +109,10 @@ export default function DoctorConsultationPage() {
   const [rxDraft, setRxDraft] = useState<Rx>({ drug: '', dosage: '', frequency: '' })
   const [seconds, setSeconds] = useState(0)
   const [draft, setDraft] = useState('')
+  const [typing, setTyping] = useState(false)
+  const listRef = useRef<HTMLUListElement>(null)
   const [messages, setMessages] = useState<Message[]>([
-    { from: 'me', text: 'Hi Jordan, I can see your recent BP readings. How have you been feeling?' },
+    { from: 'me', text: 'Hi Gunjan, I can see your recent BP readings. How have you been feeling?' },
     { from: 'patient', text: 'Better overall, a bit tired in the afternoons.' },
   ])
 
@@ -44,13 +121,22 @@ export default function DoctorConsultationPage() {
     return () => clearInterval(id)
   }, [])
 
+  useEffect(() => {
+    listRef.current?.scrollTo({ top: listRef.current.scrollHeight, behavior: 'smooth' })
+  }, [messages, typing])
+
   const time = `${String(Math.floor(seconds / 60)).padStart(2, '0')}:${String(seconds % 60).padStart(2, '0')}`
 
-  function send() {
-    const text = draft.trim()
-    if (!text) return
-    setMessages((m) => [...m, { from: 'me', text }])
+  function send(text: string) {
+    const t = text.trim()
+    if (!t) return
+    setMessages((m) => [...m, { from: 'me', text: t }])
     setDraft('')
+    setTyping(true)
+    setTimeout(() => {
+      setMessages((m) => [...m, { from: 'patient', text: patientReply(t) }])
+      setTyping(false)
+    }, 1300)
   }
 
   function addRx(e: React.FormEvent) {
@@ -70,7 +156,7 @@ export default function DoctorConsultationPage() {
         name: r.drug,
         dosage: r.dosage,
         frequency: r.frequency,
-        prescribedBy: 'Dr. Amara Okafor',
+        prescribedBy: doctorProfile.name,
         date: new Date().toLocaleDateString('en-IN'),
       })),
     )
@@ -81,7 +167,21 @@ export default function DoctorConsultationPage() {
   return (
     <div className="grid gap-3 lg:grid-cols-[1fr_auto]">
       <section className="relative min-h-[60svh] overflow-hidden rounded-[1.75rem] bg-foreground lg:min-h-[calc(100svh-9rem)]">
-        <Image src="/images/patient-self.png" alt="Jordan Miles on video" fill priority sizes="70vw" className="object-cover" />
+        <Image
+          src="/images/consult-call.jpg"
+          alt="Video consultation with Gunjan Sahu"
+          fill
+          priority
+          sizes="70vw"
+          className="object-cover"
+        />
+
+        {!cam && (
+          <div className="absolute inset-0 flex flex-col items-center justify-center gap-2 bg-foreground/80 text-background backdrop-blur-sm">
+            <VideoOff className="size-8" aria-hidden="true" />
+            <p className="text-sm">Your camera is off</p>
+          </div>
+        )}
 
         <div className="absolute top-4 left-4 flex items-center gap-2 rounded-full bg-card/85 px-3 py-1.5 text-xs backdrop-blur-md">
           <span className="relative flex size-2">
@@ -94,26 +194,16 @@ export default function DoctorConsultationPage() {
         </div>
 
         <div className="absolute top-4 right-4 rounded-2xl bg-card/85 px-4 py-2.5 backdrop-blur-md">
-          <p className="text-sm font-medium">Jordan Miles</p>
-          <p className="text-xs text-muted-foreground">34 yrs · BP follow-up</p>
+          <p className="text-sm font-medium">Gunjan Sahu</p>
+          <p className="text-xs text-muted-foreground">20 yrs · BP follow-up</p>
         </div>
 
-        <div className="absolute right-4 bottom-24 h-32 w-24 overflow-hidden rounded-2xl border-2 border-card bg-muted shadow-xl sm:h-40 sm:w-56">
-          {cam ? (
-            <Image src="/images/doctor-call.png" alt="Your camera" fill sizes="220px" className="object-cover" />
-          ) : (
-            <div className="flex h-full items-center justify-center">
-              <span className="flex size-12 items-center justify-center rounded-full bg-brand-soft text-sm font-medium text-accent-foreground">
-                AO
-              </span>
-            </div>
-          )}
-          {!mic && (
-            <span className="absolute bottom-2 left-2 flex size-6 items-center justify-center rounded-full bg-destructive text-primary-foreground">
-              <MicOff className="size-3" aria-hidden="true" />
-            </span>
-          )}
-        </div>
+        {!mic && (
+          <span className="absolute bottom-24 left-4 flex items-center gap-1.5 rounded-full bg-destructive px-3 py-1 text-xs text-primary-foreground">
+            <MicOff className="size-3" aria-hidden="true" />
+            Muted
+          </span>
+        )}
 
         <div className="absolute inset-x-0 bottom-4 flex justify-center">
           <div className="flex items-center gap-2 rounded-full bg-card/85 p-2 backdrop-blur-xl">
@@ -160,7 +250,7 @@ export default function DoctorConsultationPage() {
                 <span className="absolute -top-1 -right-1 flex size-5 items-center justify-center rounded-full bg-brand text-[10px] text-primary-foreground">
                   {rxList.length}
                 </span>
-              )} 
+              )}
             </button>
             <button
               type="button"
@@ -191,7 +281,7 @@ export default function DoctorConsultationPage() {
         aria-label="Consultation chat"
         className={cn(
           'flex flex-col overflow-hidden rounded-[1.75rem] bg-card transition-all duration-500 ease-[cubic-bezier(0.16,1,0.3,1)]',
-          chatOpen ? 'max-h-[600px] opacity-100 lg:max-h-none lg:w-80' : 'max-h-0 opacity-0 lg:w-0',
+          chatOpen ? 'max-h-[680px] opacity-100 lg:max-h-none lg:w-80' : 'max-h-0 opacity-0 lg:w-0',
         )}
       >
         <div className="flex min-h-0 flex-1 flex-col lg:w-80">
@@ -199,7 +289,8 @@ export default function DoctorConsultationPage() {
             <p className="font-medium">Consultation chat</p>
             <p className="text-xs text-muted-foreground">Messages are saved to the visit notes</p>
           </div>
-          <ul className="flex min-h-48 flex-1 flex-col gap-2 overflow-y-auto p-4">
+
+          <ul ref={listRef} className="flex min-h-48 flex-1 flex-col gap-2 overflow-y-auto p-4">
             {messages.map((m, i) => (
               <li
                 key={i}
@@ -211,12 +302,34 @@ export default function DoctorConsultationPage() {
                 {m.text}
               </li>
             ))}
+            {typing && (
+              <li className="self-start rounded-2xl rounded-bl-md bg-muted px-3.5 py-2.5 text-sm text-muted-foreground">
+                Gunjan is typing…
+              </li>
+            )}
           </ul>
+
+          <div className="border-t px-3 pt-3">
+            <p className="mb-2 text-xs text-muted-foreground">Quick replies</p>
+            <div className="no-scrollbar flex gap-2 overflow-x-auto pb-1 lg:max-h-32 lg:flex-wrap lg:overflow-y-auto lg:overflow-x-hidden">
+              {quickReplies.map((q) => (
+                <button
+                  key={q}
+                  type="button"
+                  onClick={() => send(q)}
+                  className="shrink-0 rounded-full border px-3 py-1.5 text-left text-xs transition-colors hover:border-brand hover:bg-brand-soft"
+                >
+                  {q}
+                </button>
+              ))}
+            </div>
+          </div>
+
           <form
-            className="flex gap-2 border-t p-3"
+            className="flex gap-2 p-3"
             onSubmit={(e) => {
               e.preventDefault()
-              send()
+              send(draft)
             }}
           >
             <label htmlFor="chat-input" className="sr-only">
@@ -245,7 +358,7 @@ export default function DoctorConsultationPage() {
           <form onSubmit={addRx} className="flex flex-col gap-4">
             <DialogHeader>
               <DialogTitle>New prescription</DialogTitle>
-              <DialogDescription>For Jordan Miles</DialogDescription>
+              <DialogDescription>For Gunjan Sahu</DialogDescription>
             </DialogHeader>
             <div className="flex flex-col gap-2">
               <Label htmlFor="drug">Medicine</Label>
@@ -279,10 +392,7 @@ export default function DoctorConsultationPage() {
           </DialogHeader>
           <DialogFooter>
             <DialogClose render={<Button variant="ghost" className="rounded-full" />}>Stay</DialogClose>
-            <Button
-              className="rounded-full bg-destructive text-primary-foreground hover:bg-destructive/90"
-              onClick={endCall}
-            >
+            <Button className="rounded-full bg-destructive text-primary-foreground hover:bg-destructive/90" onClick={endCall}>
               End call
             </Button>
           </DialogFooter>
