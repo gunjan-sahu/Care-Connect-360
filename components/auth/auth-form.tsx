@@ -5,6 +5,7 @@ import { toast } from 'sonner'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
+import { findAccount, saveAccount, saveSession, type Session } from '@/lib/session'
 import { cn } from '@/lib/utils'
 
 const modes = ['Sign in', 'Create account'] as const
@@ -16,13 +17,31 @@ export function AuthForm() {
   const [loading, setLoading] = useState(false)
   const isSignup = mode === 'Create account'
 
-  function submit(e: React.FormEvent) {
+  function submit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault()
+    const data = new FormData(e.currentTarget)
+    const email = String(data.get('email') ?? '').trim().toLowerCase()
+    const password = String(data.get('password') ?? '')
+    const typedName = String(data.get('name') ?? '').trim()
+
     setLoading(true)
+
+    let session: Session
+    if (isSignup) {
+      session = { name: typedName || email.split('@')[0], email, password, role } as unknown as Session
+      saveAccount(session)
+    } else {
+      const found = findAccount(email)
+      session = (found ?? { name: email.split('@')[0], email, password, role }) as unknown as Session
+    }
+
+    // Save the session so the portal lets you in
+    saveSession({ ...(session as object), role } as unknown as Session)
+
     setTimeout(() => {
       toast.success(isSignup ? 'Account created' : 'Welcome back')
       window.location.assign(role === 'Doctor' ? '/doctor' : '/dashboard')
-    }, 900)
+    }, 600)
   }
 
   return (
@@ -106,7 +125,7 @@ export function AuthForm() {
       </form>
 
       <p className="text-center text-xs text-muted-foreground">
-        Demo only: any email and password will work for now.
+        Demo only: no real security. Accounts are stored in your browser.
       </p>
     </div>
   )
