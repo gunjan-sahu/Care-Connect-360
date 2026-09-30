@@ -52,18 +52,33 @@ export function CtaFooter() {
               Virtual consultations, prescriptions, secure video and billing — built for patients and clinicians.
             </p>
           </div>
-          {[
-            { h: 'Platform', l: ['Consultations', 'Prescriptions', 'Secure video', 'Billing'] },
-            { h: 'Company', l: ['About', 'Careers', 'Privacy', 'Contact'] },
+                    {[
+            {
+              h: 'Platform',
+              l: [
+                { t: 'Consultations', href: '/#services' },
+                { t: 'Prescriptions', href: '/#services' },
+                { t: 'Secure video', href: '/#video' },
+                { t: 'Billing', href: '/#pricing' },
+              ],
+            },
+            {
+              h: 'Company',
+              l: [
+                { t: 'How it works', href: '/#process' },
+                { t: 'Privacy', href: '/privacy' },
+                { t: 'Contact', href: '/contact' },
+              ],
+            },
           ].map((c) => (
             <nav key={c.h} aria-label={c.h}>
               <p className="text-xs tracking-[0.2em] text-background/50 uppercase">{c.h}</p>
               <ul className="mt-4 flex flex-col gap-2 text-sm">
                 {c.l.map((x) => (
-                  <li key={x}>
-                    <a href="#" className="text-background/80 transition-colors hover:text-background">
-                      {x}
-                    </a>
+                  <li key={x.t}>
+                    <Link href={x.href} className="text-background/80 transition-colors hover:text-background">
+                      {x.t}
+                    </Link>
                   </li>
                 ))}
               </ul>

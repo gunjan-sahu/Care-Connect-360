@@ -15,12 +15,13 @@ import {
 } from '@/components/ui/dialog'
 import { StatusPill } from '@/components/dashboard/status-pill'
 import type { Prescription } from '@/lib/data'
+import { usePersisted } from '@/lib/persist'
 import { cn } from '@/lib/utils'
 
 const pharmacies = ['CityCare Pharmacy · 0.4 mi', 'Wellness Rx · 1.2 mi', 'Home delivery · 2 days']
 
 export function PrescriptionsView({ prescriptions }: { prescriptions: Prescription[] }) {
-  const [items, setItems] = useState(prescriptions)
+  const [items, setItems] = usePersisted('cc360-prescriptions', prescriptions)
   const [refill, setRefill] = useState<Prescription | null>(null)
   const [pharmacy, setPharmacy] = useState(pharmacies[0])
 

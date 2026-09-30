@@ -1,79 +1,80 @@
-'use client'
-
-import { useState } from 'react'
-import { toast } from 'sonner'
-import { Button } from '@/components/ui/button'
+import { earningsByMonth, payouts } from '@/lib/doctor-data'
 import { cn } from '@/lib/utils'
 
-const days = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri']
-const slots = ['09:00', '10:00', '11:00', '12:00', '14:00', '15:00', '16:00', '17:00']
+const inr = (n: number) => `₹${n.toLocaleString('en-IN')}`
 
-export default function AvailabilityPage() {
-  const [day, setDay] = useState(days[0])
-  const [open, setOpen] = useState<Record<string, string[]>>({
-    Mon: ['09:00', '10:00', '14:00', '15:00'],
-    Tue: ['09:00', '10:00', '11:00'],
-    Wed: ['14:00', '15:00', '16:00'],
-    Thu: ['09:00', '10:00', '14:00'],
-    Fri: ['09:00', '10:00', '11:00', '12:00'],
-  })
-
-  function toggle(slot: string) {
-    setOpen((prev) => {
-      const current = prev[day]
-      const next = current.includes(slot) ? current.filter((s) => s !== slot) : [...current, slot]
-      return { ...prev, [day]: next }
-    })
-  }
+export default function EarningsPage() {
+  const max = Math.max(...earningsByMonth.map((m) => m.amount))
+  const thisMonth = earningsByMonth[earningsByMonth.length - 1].amount
+  const pending = payouts.filter((p) => p.status === 'Pending').reduce((s, p) => s + p.amount, 0)
 
   return (
-    <section className="rounded-xl border bg-card p-5">
-      <h2 className="text-sm font-medium">Set the hours patients can book</h2>
-      <p className="mt-1 text-xs text-muted-foreground">Click a time to open or close it.</p>
+    <div className="grid gap-3 lg:grid-cols-3">
+      <section className="rounded-[1.75rem] bg-foreground p-6 text-background">
+        <p className="text-sm text-background/60">This month</p>
+        <p className="mt-2 text-5xl font-medium tracking-tight">{inr(thisMonth)}</p>
+      </section>
+      <section className="rounded-[1.75rem] bg-card p-6">
+        <p className="text-sm text-muted-foreground">Pending payout</p>
+        <p className="mt-2 text-4xl font-medium tracking-tight">{inr(pending)}</p>
+      </section>
+      <section className="rounded-[1.75rem] bg-card p-6">
+        <p className="text-sm text-muted-foreground">Visits this month</p>
+        <p className="mt-2 text-4xl font-medium tracking-tight">58</p>
+      </section>
 
-      <div className="mt-4 flex gap-2">
-        {days.map((d) => (
-          <button
-            key={d}
-            type="button"
-            onClick={() => setDay(d)}
-            aria-pressed={day === d}
-            className={cn(
-              'rounded-md border px-4 py-1.5 text-sm',
-              day === d ? 'border-foreground bg-foreground text-background' : 'hover:border-foreground/40',
-            )}
-          >
-            {d}
-          </button>
-        ))}
-      </div>
+      <section className="rounded-[1.75rem] bg-card p-5 sm:p-6 lg:col-span-3">
+        <h2 className="font-medium">Last 5 months</h2>
+        <div className="mt-6 flex h-48 items-end gap-3">
+          {earningsByMonth.map((m) => (
+            <div key={m.month} className="flex h-full flex-1 flex-col items-center justify-end gap-2">
+              <div
+                className="w-full rounded-t-xl bg-brand transition-[height] duration-1000"
+                style={{ height: `${(m.amount / max) * 85}%` }}
+                title={inr(m.amount)}
+              />
+              <span className="text-xs text-muted-foreground">{m.month}</span>
+            </div>
+          ))}
+        </div>
+      </section>
 
-      <div className="mt-5 grid grid-cols-2 gap-2 sm:grid-cols-4">
-        {slots.map((s) => {
-          const isOpen = open[day].includes(s)
-          return (
-            <button
-              key={s}
-              type="button"
-              onClick={() => toggle(s)}
-              aria-pressed={isOpen}
-              className={cn(
-                'rounded-md border py-2.5 font-mono text-sm transition-colors',
-                isOpen ? 'border-brand bg-brand text-primary-foreground' : 'text-muted-foreground hover:border-brand',
-              )}
-            >
-              {s}
-            </button>
-          )
-        })}
-      </div>
-
-      <p className="mt-4 text-sm text-muted-foreground">
-        {open[day].length} open slot(s) on {day}.
-      </p>
-      <Button className="mt-4" onClick={() => toast.success('Availability saved')}>
-        Save availability
-      </Button>
-    </section>
+      <section className="rounded-[1.75rem] bg-card p-5 sm:p-6 lg:col-span-3">
+        <h2 className="font-medium">Payouts</h2>
+        <div className="mt-4 overflow-x-auto">
+          <table className="w-full min-w-[480px] text-sm">
+            <thead>
+              <tr className="text-left text-xs text-muted-foreground">
+                <th className="pb-3 font-normal">ID</th>
+                <th className="pb-3 font-normal">Date</th>
+                <th className="pb-3 font-normal">Visits</th>
+                <th className="pb-3 text-right font-normal">Amount</th>
+                <th className="pb-3 pl-4 font-normal">Status</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y">
+              {payouts.map((p) => (
+                <tr key={p.id}>
+                  <td className="py-3.5 font-mono text-xs">{p.id}</td>
+                  <td className="py-3.5">{p.date}</td>
+                  <td className="py-3.5">{p.visits}</td>
+                  <td className="py-3.5 text-right font-medium">{inr(p.amount)}</td>
+                  <td className="py-3.5 pl-4">
+                    <span
+                      className={cn(
+                        'inline-flex rounded-full px-2.5 py-1 text-xs font-medium',
+                        p.status === 'Paid' ? 'bg-success/15 text-success' : 'bg-muted text-muted-foreground',
+                      )}
+                    >
+                      {p.status}
+                    </span>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      </section>
+    </div>
   )
 }

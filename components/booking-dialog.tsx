@@ -17,7 +17,7 @@ import { Label } from '@/components/ui/label'
 import { doctors, specialties } from '@/lib/data'
 import { cn } from '@/lib/utils'
 
-const days = ['Mon 28', 'Tue 29', 'Wed 30', 'Thu 01', 'Fri 02']
+const days = ['Wed 30', 'Thu 01', 'Fri 02', 'Mon 05', 'Tue 06']
 const slots = ['09:00', '10:30', '11:45', '14:30', '16:00', '17:15']
 
 export function BookingDialog({ trigger }: { trigger: ReactElement }) {

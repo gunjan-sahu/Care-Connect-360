@@ -64,13 +64,12 @@ export const prescriptions: Prescription[] = [
 ]
 
 export const invoices: Invoice[] = [
-  { id: 'INV-2048', service: 'Video consultation : Cardiology', date: 'Sep 19, 2026', amount: 120, covered: 90, status: 'Due' },
-  { id: 'INV-2031', service: 'Prescription renewal', date: 'Sep 10, 2026', amount: 35, covered: 35, status: 'Paid' },
-  { id: 'INV-2017', service: 'Video consultation : General', date: 'Sep 04, 2026', amount: 80, covered: 60, status: 'Paid' },
-  { id: 'INV-2002', service: 'Dermatology chat review', date: 'Aug 28, 2026', amount: 45, covered: 20, status: 'Processing' },
-  { id: 'INV-1988', service: 'Lab results review', date: 'Aug 15, 2026', amount: 60, covered: 60, status: 'Paid' },
+  { id: 'INV-2048', service: 'Video consultation : Cardiology', date: 'Sep 19, 2026', amount: 1200, covered: 900, status: 'Due' },
+  { id: 'INV-2031', service: 'Prescription renewal', date: 'Sep 10, 2026', amount: 350, covered: 350, status: 'Paid' },
+  { id: 'INV-2017', service: 'Video consultation : General', date: 'Sep 04, 2026', amount: 800, covered: 600, status: 'Paid' },
+  { id: 'INV-2002', service: 'Dermatology chat review', date: 'Aug 28, 2026', amount: 450, covered: 200, status: 'Processing' },
+  { id: 'INV-1988', service: 'Lab results review', date: 'Aug 15, 2026', amount: 600, covered: 600, status: 'Paid' },
 ]
-
 export const vitals = [
   { label: 'Heart rate', value: '72', unit: 'bpm', trend: [68, 71, 70, 74, 72, 69, 72] },
   { label: 'Blood pressure', value: '118/76', unit: 'mmHg', trend: [122, 120, 121, 119, 118, 117, 118] },

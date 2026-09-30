@@ -16,11 +16,12 @@ import {
 } from '@/components/ui/dialog'
 import { StatusPill } from '@/components/dashboard/status-pill'
 import type { Invoice } from '@/lib/data'
+import { usePersisted } from '@/lib/persist'
 
 const usd = (n: number) => `₹${n.toFixed(2)}`
 
 export function BillingView({ invoices }: { invoices: Invoice[] }) {
-  const [items, setItems] = useState(invoices)
+  const [items, setItems] = usePersisted('cc360-invoices', invoices)
   const [paying, setPaying] = useState<Invoice | null>(null)
   const [loading, setLoading] = useState(false)
 
@@ -35,7 +36,7 @@ export function BillingView({ invoices }: { invoices: Invoice[] }) {
     setLoading(true)
     setTimeout(() => {
       setItems((prev) => prev.map((i) => (i.id === paying.id ? { ...i, status: 'Paid' } : i)))
-      toast.success(`${paying.id} paid`, { description: `${usd(paying.amount - paying.covered)} charged to card XXXX XXXX 4242` })
+      toast.success(`${paying.id} paid`, { description: `${usd(paying.amount - paying.covered)} charged to card XXXX XXXX 42422` })
       setLoading(false)
       setPaying(null)
     }, 1200)
@@ -72,8 +73,8 @@ export function BillingView({ invoices }: { invoices: Invoice[] }) {
         <div className="mt-3 flex aspect-[1.7] flex-col justify-between rounded-2xl bg-gradient-to-br from-brand to-accent-foreground p-4 text-primary-foreground">
           <CreditCard className="size-5" aria-hidden="true" />
           <div>
-            <p className="font-mono tracking-widest">XXXX XXXX 424</p>
-            <p className="text-xs opacity-80"> Gunjan Patel · 08/29</p>
+            <p className="font-mono tracking-widest">XXXX XXXX 4242</p>
+            <p className="text-xs opacity-80"> Gunjan Sahu · 08/29</p>
           </div>
         </div>
       </section>
@@ -159,7 +160,7 @@ export function BillingView({ invoices }: { invoices: Invoice[] }) {
             )}
             <div className="flex flex-col gap-2">
               <Label htmlFor="card">Card</Label>
-              <Input id="card" defaultValue="XXXX XXXX XXXX 4242" readOnly className="h-11 rounded-xl font-mono" />
+              <Input id="card" defaultValue="XXXX XXXX XXXX 42422" readOnly className="h-11 rounded-xl font-mono" />
             </div>
             <DialogFooter>
               <Button type="submit" disabled={loading} className="h-11 w-full rounded-full">

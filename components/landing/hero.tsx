@@ -70,7 +70,7 @@ export function Hero() {
                 </p>
                 <p className="flex items-center gap-1 text-muted-foreground">
                   <ShieldCheck className="size-3.5" aria-hidden="true" />
-                  HIPAA & GDPR compliant
+                  Encrypted & private
                 </p>
               </div>
             </div>

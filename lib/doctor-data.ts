@@ -20,8 +20,8 @@ export type Patient = {
 }
 
 export const doctorProfile = {
-  name: 'Dr. Amara Okafor',
-  initials: 'AO',
+  name: 'Dr. Ananya Iyer',
+  initials: 'AI',
   specialty: 'General Practice',
 }
 
@@ -49,16 +49,16 @@ export const patients: Patient[] = [
 ]
 
 export const earningsByMonth = [
-  { month: 'May', amount: 3200 },
-  { month: 'Jun', amount: 3800 },
-  { month: 'Jul', amount: 3500 },
-  { month: 'Aug', amount: 4300 },
-  { month: 'Sep', amount: 4700 },
+  { month: 'May', amount: 32000 },
+  { month: 'Jun', amount: 38000 },
+  { month: 'Jul', amount: 35000 },
+  { month: 'Aug', amount: 43000 },
+  { month: 'Sep', amount: 47000 },
 ]
 
 export const payouts = [
-  { id: 'PAY-311', date: 'Sep 28', visits: 12, amount: 960, status: 'Paid' },
-  { id: 'PAY-298', date: 'Sep 21', visits: 14, amount: 1120, status: 'Paid' },
-  { id: 'PAY-284', date: 'Sep 14', visits: 11, amount: 880, status: 'Paid' },
-  { id: 'PAY-320', date: 'Oct 05', visits: 9, amount: 720, status: 'Pending' },
+  { id: 'PAY-311', date: 'Sep 28', visits: 12, amount: 9600, status: 'Paid' },
+  { id: 'PAY-298', date: 'Sep 21', visits: 14, amount: 11200, status: 'Paid' },
+  { id: 'PAY-284', date: 'Sep 14', visits: 11, amount: 8800, status: 'Paid' },
+  { id: 'PAY-320', date: 'Oct 05', visits: 9, amount: 7200, status: 'Pending' },
 ]
