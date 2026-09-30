@@ -2,7 +2,7 @@
 
 import { useState } from 'react'
 import Link from 'next/link'
-import { ArrowUpRight } from 'lucide-react'
+import { ArrowUpRight, PanelLeft } from 'lucide-react'
 import { Logo } from '@/components/logo'
 import { Button } from '@/components/ui/button'
 import { BookingDialog } from '@/components/booking-dialog'
@@ -21,35 +21,40 @@ export function SiteHeader() {
   return (
     <header className="fixed inset-x-0 top-0 z-30 px-3 pt-3 sm:px-6 lg:left-[var(--sidebar-space)] lg:transition-[left] lg:duration-500 lg:ease-[cubic-bezier(0.16,1,0.3,1)]">
       <div className="mx-auto flex h-20 max-w-7xl items-center justify-between rounded-full bg-card px-4 shadow-[0_8px_30px_-12px_rgb(0_0_0/0.15)] sm:px-6">
-        <div className="flex items-center gap-8">
+        <div className="flex items-center gap-5">
           <Logo />
-          <nav aria-label="Primary" className="hidden xl:block">
-            <ul className="flex items-center gap-1">
-              {links.map((l) => (
-                <li key={l.href}>
-                  <a
-                    href={l.href}
-                    className="rounded-full px-3 py-1.5 text-sm text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
-                  >
-                    {l.label}
-                  </a>
-                </li>
-              ))}
-            </ul>
-          </nav>
+          <span className="hidden h-6 w-px bg-border xl:block" aria-hidden="true" />
+          <p className="hidden text-sm text-muted-foreground xl:block">Virtual care, one tap away.</p>
         </div>
 
         <div className="flex items-center gap-2">
+          <button
+            type="button"
+            onClick={() => window.dispatchEvent(new Event('toggle-landing-sidebar'))}
+            className="hidden items-center gap-2 rounded-full border px-3.5 py-1.5 text-sm transition-colors hover:bg-muted lg:inline-flex"
+          >
+            <PanelLeft className="size-4" aria-hidden="true" />
+            Explore
+          </button>
+
+          <div className="hidden items-center gap-1 rounded-full bg-muted p-1 text-sm lg:flex">
+            <Link href="/dashboard" className="rounded-full px-4 py-1.5 transition-colors hover:bg-card">
+              Patient
+            </Link>
+            <Link href="/doctor" className="rounded-full px-4 py-1.5 transition-colors hover:bg-card">
+              Doctor
+            </Link>
+          </div>
+
           <Link
             href="/login"
-            className="hidden rounded-full px-3 py-1.5 text-sm transition-colors hover:bg-muted sm:inline-flex"
+            className="hidden rounded-full px-3 py-1.5 text-sm transition-colors hover:bg-muted sm:inline-flex lg:hidden"
           >
             Sign in
           </Link>
+
           <BookingDialog
-            trigger={
-              <Button className="hidden h-9 rounded-full px-4 sm:inline-flex">Book a consultation</Button>
-            }
+            trigger={<Button className="hidden h-9 rounded-full px-4 sm:inline-flex">Book a consultation</Button>}
           />
 
           <Sheet open={open} onOpenChange={setOpen}>

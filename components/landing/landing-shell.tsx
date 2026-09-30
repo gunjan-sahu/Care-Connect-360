@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, type ReactNode } from 'react'
+import { useEffect, useState, type ReactNode } from 'react'
 import Link from 'next/link'
 import { CalendarCheck, ChevronsLeft, ListChecks, Plus, Receipt, Video } from 'lucide-react'
 import { Logo } from '@/components/logo'
@@ -16,7 +16,13 @@ const links = [
 ]
 
 export function LandingShell({ children }: { children: ReactNode }) {
-  const [collapsed, setCollapsed] = useState(false)
+  const [collapsed, setCollapsed] = useState(true)
+
+  useEffect(() => {
+    const toggle = () => setCollapsed((c) => !c)
+    window.addEventListener('toggle-landing-sidebar', toggle)
+    return () => window.removeEventListener('toggle-landing-sidebar', toggle)
+  }, [])
 
   return (
     <>
