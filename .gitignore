@@ -13,3 +13,9 @@ __v0_jsx-dev-runtime.ts
 node_modules
 .next/
 .DS_Store
+
+# Backend
+backend/venv/
+backend/.env
+__pycache__/
+*.pyc
