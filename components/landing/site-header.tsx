@@ -5,6 +5,7 @@ import Link from 'next/link'
 import { ArrowUpRight } from 'lucide-react'
 import { Logo } from '@/components/logo'
 import { Button } from '@/components/ui/button'
+import { BookingDialog } from '@/components/booking-dialog'
 import { Sheet, SheetContent, SheetTitle, SheetTrigger } from '@/components/ui/sheet'
 
 const links = [
@@ -19,18 +20,24 @@ export function SiteHeader() {
 
   return (
     <header className="fixed inset-x-0 top-0 z-30 px-3 pt-3 sm:px-6 lg:left-[var(--sidebar-space)] lg:transition-[left] lg:duration-500 lg:ease-[cubic-bezier(0.16,1,0.3,1)]">
-      <div className="mx-auto flex h-20 max-w-7xl items-center justify-between rounded-full bg-card px-4 shadow-[0_8px_30px_-12px_rgb(0_0_0/0.15)] sm:px-6 lg:h-16">
-        <div className="lg:hidden">
+      <div className="mx-auto flex h-20 max-w-7xl items-center justify-between rounded-full bg-card px-4 shadow-[0_8px_30px_-12px_rgb(0_0_0/0.15)] sm:px-6">
+        <div className="flex items-center gap-8">
           <Logo />
+          <nav aria-label="Primary" className="hidden xl:block">
+            <ul className="flex items-center gap-1">
+              {links.map((l) => (
+                <li key={l.href}>
+                  <a
+                    href={l.href}
+                    className="rounded-full px-3 py-1.5 text-sm text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
+                  >
+                    {l.label}
+                  </a>
+                </li>
+              ))}
+            </ul>
+          </nav>
         </div>
-
-        <p className="hidden items-center gap-2.5 text-sm text-muted-foreground lg:flex">
-          <span className="relative flex size-2">
-            <span className="absolute inset-0 animate-pulse-ring rounded-full bg-success" />
-            <span className="relative size-2 rounded-full bg-success" />
-          </span>
-          Doctors online now · average wait under 2 min
-        </p>
 
         <div className="flex items-center gap-2">
           <Link
@@ -39,14 +46,11 @@ export function SiteHeader() {
           >
             Sign in
           </Link>
-          <Button
-            nativeButton={false}
-            render={<Link href="/dashboard" />}
-            className="hidden h-9 rounded-full px-4 sm:inline-flex"
-          >
-            Open portal
-            <ArrowUpRight data-icon="inline-end" />
-          </Button>
+          <BookingDialog
+            trigger={
+              <Button className="hidden h-9 rounded-full px-4 sm:inline-flex">Book a consultation</Button>
+            }
+          />
 
           <Sheet open={open} onOpenChange={setOpen}>
             <SheetTrigger
@@ -89,10 +93,10 @@ export function SiteHeader() {
               </nav>
               <Button
                 nativeButton={false}
-                render={<Link href="/dashboard" />}
-                className="mt-4 h-12 rounded-full text-base"
+                render={<Link href="/login" />}
+                className="mt-4 h-12 w-full rounded-full text-base"
               >
-                Open patient portal
+                Sign in
               </Button>
             </SheetContent>
           </Sheet>

@@ -1,104 +1,115 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { toast } from 'sonner'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { cn } from '@/lib/utils'
-import { findAccount, getSession, saveAccount, saveSession } from '@/lib/session'
+
+const modes = ['Sign in', 'Create account'] as const
+const roles = ['Patient', 'Doctor'] as const
 
 export function AuthForm() {
   const router = useRouter()
-  const [mode, setMode] = useState<'login' | 'signup'>('login')
-  const [remember, setRemember] = useState(true)
-  const [error, setError] = useState('')
+  const [mode, setMode] = useState<(typeof modes)[number]>('Sign in')
+  const [role, setRole] = useState<(typeof roles)[number]>('Patient')
+  const [loading, setLoading] = useState(false)
+  const isSignup = mode === 'Create account'
 
-  useEffect(() => {
-    if (getSession()) router.replace('/dashboard')
-  }, [router])
-
-  function submit(e: React.FormEvent<HTMLFormElement>) {
+  function submit(e: React.FormEvent) {
     e.preventDefault()
-    const f = new FormData(e.currentTarget)
-    const email = String(f.get('email')).trim().toLowerCase()
-    const password = String(f.get('password'))
-    if (password.length < 6) {
-      setError('Password must be at least 6 characters.')
-      return
-    }
-    let name = 'Gunjan Sahu'
-    if (mode === 'signup') {
-      name = String(f.get('name') ?? '').trim() || name
-      saveAccount({ name, email })
-    } else {
-      name = findAccount(email)?.name ?? name
-    }
-    saveSession({ name, email }, remember)
-    toast.success(mode === 'signup' ? 'Account created' : 'Welcome back', { description: name })
-    router.push('/dashboard')
+    setLoading(true)
+    setTimeout(() => {
+      toast.success(isSignup ? 'Account created' : 'Welcome back')
+          router.replace(role === 'Doctor' ? '/doctor' : '/dashboard')
+    }, 900)
   }
 
   return (
-    <div className="w-full max-w-md rounded-[2rem] bg-card p-6 sm:p-10">
+    <div className="flex flex-col gap-6">
       <div role="tablist" aria-label="Account" className="flex rounded-full bg-muted p-1 text-sm">
-        {(['login', 'signup'] as const).map((m) => (
+        {modes.map((m) => (
           <button
             key={m}
-            role="tab"
             type="button"
+            role="tab"
             aria-selected={mode === m}
-            onClick={() => {
-              setMode(m)
-              setError('')
-            }}
+            onClick={() => setMode(m)}
             className={cn(
-              'flex-1 rounded-full py-2 transition-all',
-              mode === m ? 'bg-card shadow-sm' : 'text-muted-foreground',
+              'flex-1 rounded-full py-2 transition-all duration-300',
+              mode === m ? 'bg-card shadow-sm' : 'text-muted-foreground hover:text-foreground',
             )}
           >
-            {m === 'login' ? 'Sign in' : 'Create account'}
+            {m}
           </button>
         ))}
       </div>
 
-      <form onSubmit={submit} className="mt-6 flex flex-col gap-4">
-        {mode === 'signup' && (
+      <div>
+        <h1 className="text-2xl font-medium tracking-tight">{isSignup ? 'Create your account' : 'Welcome back'}</h1>
+        <p className="mt-1 text-sm text-muted-foreground">
+          {role === 'Doctor'
+            ? 'Sign in to open your doctor workspace.'
+            : isSignup
+              ? 'Start your first virtual consultation in minutes.'
+              : 'Sign in to open your patient portal.'}
+        </p>
+      </div>
+
+      <fieldset>
+        <legend className="mb-2 text-sm font-medium">I am a</legend>
+        <div className="grid grid-cols-2 gap-2">
+          {roles.map((r) => (
+            <button
+              key={r}
+              type="button"
+              aria-pressed={role === r}
+              onClick={() => setRole(r)}
+              className={cn(
+                'rounded-xl border py-2.5 text-sm transition-all',
+                role === r ? 'border-foreground bg-foreground text-background' : 'hover:border-foreground/40',
+              )}
+            >
+              {r}
+            </button>
+          ))}
+        </div>
+      </fieldset>
+
+      <form onSubmit={submit} className="flex flex-col gap-4">
+        {isSignup && (
           <div className="flex flex-col gap-2">
             <Label htmlFor="name">Full name</Label>
-            <Input id="name" name="name" required className="h-11 rounded-xl" />
+            <Input id="name" name="name" autoComplete="name" required className="h-11 rounded-xl" />
           </div>
         )}
         <div className="flex flex-col gap-2">
           <Label htmlFor="email">Email</Label>
-          <Input id="email" name="email" type="email" required className="h-11 rounded-xl" />
+          <Input id="email" name="email" type="email" autoComplete="email" required className="h-11 rounded-xl" />
         </div>
         <div className="flex flex-col gap-2">
           <Label htmlFor="password">Password</Label>
-          <Input id="password" name="password" type="password" required className="h-11 rounded-xl" />
-        </div>
-
-        <label className="flex items-center gap-2 text-sm">
-          <input
-            type="checkbox"
-            checked={remember}
-            onChange={(e) => setRemember(e.target.checked)}
-            className="size-4 accent-[var(--brand)]"
+          <Input
+            id="password"
+            name="password"
+            type="password"
+            autoComplete={isSignup ? 'new-password' : 'current-password'}
+            minLength={8}
+            required
+            className="h-11 rounded-xl"
           />
-          Remember me
-        </label>
-
-        {error && (
-          <p role="alert" className="text-sm text-destructive">
-            {error}
-          </p>
-        )}
-
-        <Button type="submit" className="h-11 rounded-full">
-          {mode === 'login' ? 'Sign in' : 'Create account'}
+          {isSignup && <p className="text-xs text-muted-foreground">At least 8 characters.</p>}
+        </div>
+        <Button type="submit" disabled={loading} className="mt-2 h-12 w-full rounded-full">
+          {loading ? 'Please wait…' : mode}
         </Button>
       </form>
+
+      <p className="text-center text-xs text-muted-foreground">
+        Demo only: any email and password will work for now.
+      </p>
     </div>
   )
 }
