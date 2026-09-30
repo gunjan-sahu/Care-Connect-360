@@ -33,7 +33,7 @@ export const doctorStats = [
 ]
 
 export const queue: QueueItem[] = [
-  { id: 'q1', patient: 'Jordan Miles', age: 34, reason: 'BP follow-up, afternoon fatigue', time: '14:30', type: 'Video', status: 'Waiting' },
+  { id: 'q1', patient: 'Gunjan Sahu', age: 34, reason: 'BP follow-up, afternoon fatigue', time: '14:30', type: 'Video', status: 'Waiting' },
   { id: 'q2', patient: 'Sara Ahmed', age: 27, reason: 'Persistent cough, 5 days', time: '14:45', type: 'Video', status: 'Waiting' },
   { id: 'q3', patient: 'Luis Ortega', age: 51, reason: 'Diabetes check-in', time: '15:15', type: 'Follow-up', status: 'Scheduled' },
   { id: 'q4', patient: 'Meera Nair', age: 42, reason: 'Migraine review', time: '15:45', type: 'Chat', status: 'Scheduled' },
@@ -41,7 +41,7 @@ export const queue: QueueItem[] = [
 ]
 
 export const patients: Patient[] = [
-  { id: 'p1', name: 'Jordan Miles', age: 34, gender: 'Male', condition: 'Hypertension', lastVisit: 'Sep 04', allergies: 'None', meds: ['Lisinopril 10 mg', 'Atorvastatin 20 mg'] },
+  { id: 'p1', name: 'Gunjan Sahu', age: 34, gender: 'Male', condition: 'Hypertension', lastVisit: 'Sep 04', allergies: 'None', meds: ['Lisinopril 10 mg', 'Atorvastatin 20 mg'] },
   { id: 'p2', name: 'Sara Ahmed', age: 27, gender: 'Female', condition: 'Seasonal allergies', lastVisit: 'Aug 18', allergies: 'Penicillin', meds: ['Cetirizine 10 mg'] },
   { id: 'p3', name: 'Luis Ortega', age: 51, gender: 'Male', condition: 'Type 2 diabetes', lastVisit: 'Sep 12', allergies: 'None', meds: ['Metformin 500 mg'] },
   { id: 'p4', name: 'Meera Nair', age: 42, gender: 'Female', condition: 'Chronic migraine', lastVisit: 'Sep 01', allergies: 'Sulfa drugs', meds: ['Sumatriptan 50 mg'] },

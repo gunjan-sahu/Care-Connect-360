@@ -1,4 +1,4 @@
-export type Session = { name: string; email: string }
+export type Session = { name: string; email: string; role?: 'Patient' | 'Doctor' }
 
 const SESSION_KEY = 'cc360-session'
 const ACCOUNTS_KEY = 'cc360-accounts'

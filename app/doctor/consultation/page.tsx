@@ -1,14 +1,13 @@
 'use client'
 
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import Image from 'next/image'
 import { useRouter } from 'next/navigation'
-import { FilePlus2, Mic, MicOff, PhoneOff } from 'lucide-react'
+import { FilePlus2, Lock, MessageSquare, Mic, MicOff, MonitorUp, PhoneOff, Send, Video, VideoOff } from 'lucide-react'
 import { toast } from 'sonner'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
-import { Textarea } from '@/components/ui/textarea'
 import {
   Dialog,
   DialogClose,
@@ -18,103 +17,231 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog'
+import { addSharedRx } from '@/lib/shared-rx'
+import { cn } from '@/lib/utils'
 
+type Message = { from: 'patient' | 'me'; text: string }
 type Rx = { drug: string; dosage: string; frequency: string }
 
 export default function DoctorConsultationPage() {
   const router = useRouter()
   const [mic, setMic] = useState(true)
-  const [notes, setNotes] = useState('')
-  const [rxList, setRxList] = useState<Rx[]>([])
+  const [cam, setCam] = useState(true)
+  const [chatOpen, setChatOpen] = useState(true)
+  const [endOpen, setEndOpen] = useState(false)
   const [rxOpen, setRxOpen] = useState(false)
-  const [draft, setDraft] = useState<Rx>({ drug: '', dosage: '', frequency: '' })
+  const [rxList, setRxList] = useState<Rx[]>([])
+  const [rxDraft, setRxDraft] = useState<Rx>({ drug: '', dosage: '', frequency: '' })
+  const [seconds, setSeconds] = useState(0)
+  const [draft, setDraft] = useState('')
+  const [messages, setMessages] = useState<Message[]>([
+    { from: 'me', text: 'Hi Jordan, I can see your recent BP readings. How have you been feeling?' },
+    { from: 'patient', text: 'Better overall, a bit tired in the afternoons.' },
+  ])
+
+  useEffect(() => {
+    const id = setInterval(() => setSeconds((s) => s + 1), 1000)
+    return () => clearInterval(id)
+  }, [])
+
+  const time = `${String(Math.floor(seconds / 60)).padStart(2, '0')}:${String(seconds % 60).padStart(2, '0')}`
+
+  function send() {
+    const text = draft.trim()
+    if (!text) return
+    setMessages((m) => [...m, { from: 'me', text }])
+    setDraft('')
+  }
 
   function addRx(e: React.FormEvent) {
     e.preventDefault()
-    if (!draft.drug.trim()) return
-    setRxList((prev) => [...prev, draft])
-    setDraft({ drug: '', dosage: '', frequency: '' })
+    if (!rxDraft.drug.trim()) return
+    setRxList((prev) => [...prev, rxDraft])
+    setRxDraft({ drug: '', dosage: '', frequency: '' })
     setRxOpen(false)
     toast.success('Prescription added')
   }
 
   function endCall() {
-    toast.success('Visit saved', {
-      description: `${rxList.length} prescription(s) sent to the patient.`,
-    })
+    setEndOpen(false)
+    addSharedRx(
+      rxList.map((r, i) => ({
+        id: `doc-${Date.now()}-${i}`,
+        name: r.drug,
+        dosage: r.dosage,
+        frequency: r.frequency,
+        prescribedBy: 'Dr. Amara Okafor',
+        date: new Date().toLocaleDateString('en-IN'),
+      })),
+    )
+    toast.success('Consultation ended', { description: `Duration ${time}. Visit saved.` })
     router.push('/doctor')
   }
 
   return (
-    <div className="grid gap-4 lg:grid-cols-[1fr_22rem]">
-      <section className="relative min-h-[50svh] overflow-hidden rounded-xl bg-foreground lg:min-h-[calc(100svh-8rem)]">
-        <Image src="/images/patient-self.png" alt="Patient on video" fill sizes="70vw" className="object-cover" />
-        <div className="absolute top-3 left-3 rounded-md bg-card/85 px-3 py-2 backdrop-blur">
+    <div className="grid gap-3 lg:grid-cols-[1fr_auto]">
+      <section className="relative min-h-[60svh] overflow-hidden rounded-[1.75rem] bg-foreground lg:min-h-[calc(100svh-9rem)]">
+        <Image src="/images/patient-self.png" alt="Jordan Miles on video" fill priority sizes="70vw" className="object-cover" />
+
+        <div className="absolute top-4 left-4 flex items-center gap-2 rounded-full bg-card/85 px-3 py-1.5 text-xs backdrop-blur-md">
+          <span className="relative flex size-2">
+            <span className="absolute inset-0 animate-pulse-ring rounded-full bg-success" />
+            <span className="relative size-2 rounded-full bg-success" />
+          </span>
+          <span className="font-mono">{time}</span>
+          <Lock className="size-3 text-muted-foreground" aria-hidden="true" />
+          <span className="hidden sm:inline">End-to-end encrypted</span>
+        </div>
+
+        <div className="absolute top-4 right-4 rounded-2xl bg-card/85 px-4 py-2.5 backdrop-blur-md">
           <p className="text-sm font-medium">Jordan Miles</p>
           <p className="text-xs text-muted-foreground">34 yrs · BP follow-up</p>
         </div>
-        <div className="absolute inset-x-0 bottom-4 flex justify-center gap-2">
-          <button
-            type="button"
-            onClick={() => setMic(!mic)}
-            aria-label={mic ? 'Mute microphone' : 'Unmute microphone'}
-            className="flex size-11 items-center justify-center rounded-md bg-card/90"
-          >
-            {mic ? <Mic className="size-5" /> : <MicOff className="size-5" />}
-          </button>
-          <button
-            type="button"
-            onClick={endCall}
-            className="flex h-11 items-center gap-2 rounded-md bg-destructive px-4 text-sm text-primary-foreground"
-          >
-            <PhoneOff className="size-5" />
-            End &amp; save
-          </button>
+
+        <div className="absolute right-4 bottom-24 h-32 w-24 overflow-hidden rounded-2xl border-2 border-card bg-muted shadow-xl sm:h-40 sm:w-56">
+          {cam ? (
+            <Image src="/images/doctor-call.png" alt="Your camera" fill sizes="220px" className="object-cover" />
+          ) : (
+            <div className="flex h-full items-center justify-center">
+              <span className="flex size-12 items-center justify-center rounded-full bg-brand-soft text-sm font-medium text-accent-foreground">
+                AO
+              </span>
+            </div>
+          )}
+          {!mic && (
+            <span className="absolute bottom-2 left-2 flex size-6 items-center justify-center rounded-full bg-destructive text-primary-foreground">
+              <MicOff className="size-3" aria-hidden="true" />
+            </span>
+          )}
+        </div>
+
+        <div className="absolute inset-x-0 bottom-4 flex justify-center">
+          <div className="flex items-center gap-2 rounded-full bg-card/85 p-2 backdrop-blur-xl">
+            <button
+              type="button"
+              onClick={() => setMic(!mic)}
+              aria-label={mic ? 'Mute microphone' : 'Unmute microphone'}
+              aria-pressed={!mic}
+              className={cn(
+                'flex size-12 items-center justify-center rounded-full transition-all duration-300 hover:scale-105',
+                mic ? 'bg-muted' : 'bg-foreground text-background',
+              )}
+            >
+              {mic ? <Mic className="size-5" /> : <MicOff className="size-5" />}
+            </button>
+            <button
+              type="button"
+              onClick={() => setCam(!cam)}
+              aria-label={cam ? 'Turn camera off' : 'Turn camera on'}
+              aria-pressed={!cam}
+              className={cn(
+                'flex size-12 items-center justify-center rounded-full transition-all duration-300 hover:scale-105',
+                cam ? 'bg-muted' : 'bg-foreground text-background',
+              )}
+            >
+              {cam ? <Video className="size-5" /> : <VideoOff className="size-5" />}
+            </button>
+            <button
+              type="button"
+              onClick={() => toast('Screen sharing started')}
+              aria-label="Share screen"
+              className="hidden size-12 items-center justify-center rounded-full bg-muted transition-transform hover:scale-105 sm:flex"
+            >
+              <MonitorUp className="size-5" />
+            </button>
+            <button
+              type="button"
+              onClick={() => setRxOpen(true)}
+              aria-label="Write prescription"
+              className="relative flex size-12 items-center justify-center rounded-full bg-muted transition-transform hover:scale-105"
+            >
+              <FilePlus2 className="size-5" />
+              {rxList.length > 0 && (
+                <span className="absolute -top-1 -right-1 flex size-5 items-center justify-center rounded-full bg-brand text-[10px] text-primary-foreground">
+                  {rxList.length}
+                </span>
+              )}
+            </button>
+            <button
+              type="button"
+              onClick={() => setChatOpen((v) => !v)}
+              aria-label="Toggle chat"
+              aria-pressed={chatOpen}
+              className={cn(
+                'flex size-12 items-center justify-center rounded-full transition-all duration-300 hover:scale-105',
+                chatOpen ? 'bg-brand text-primary-foreground' : 'bg-muted',
+              )}
+            >
+              <MessageSquare className="size-5" />
+            </button>
+            <button
+              type="button"
+              onClick={() => setEndOpen(true)}
+              aria-label="End call"
+              className="flex h-12 items-center justify-center gap-2 rounded-full bg-destructive px-5 text-sm text-primary-foreground transition-transform hover:scale-105"
+            >
+              <PhoneOff className="size-5" />
+              <span className="hidden sm:inline">End</span>
+            </button>
+          </div>
         </div>
       </section>
 
-      <aside className="flex flex-col gap-4">
-        <section className="rounded-xl border bg-card p-4">
-          <h2 className="text-sm font-medium">Patient summary</h2>
-          <p className="mt-2 text-xs text-muted-foreground">Hypertension · Allergies: none</p>
-          <p className="mt-1 text-xs text-muted-foreground">Lisinopril 10 mg, Atorvastatin 20 mg</p>
-        </section>
-
-        <section className="rounded-xl border bg-card p-4">
-          <Label htmlFor="notes" className="text-sm font-medium">
-            Visit notes
-          </Label>
-          <Textarea
-            id="notes"
-            value={notes}
-            onChange={(e) => setNotes(e.target.value)}
-            placeholder="Type notes while you talk"
-            className="mt-2 min-h-32"
-          />
-        </section>
-
-        <section className="rounded-xl border bg-card p-4">
-          <div className="flex items-center justify-between">
-            <h2 className="text-sm font-medium">Prescriptions</h2>
-            <Button size="sm" onClick={() => setRxOpen(true)}>
-              <FilePlus2 data-icon="inline-start" />
-              Write prescription
-            </Button>
+      <aside
+        aria-label="Consultation chat"
+        className={cn(
+          'flex flex-col overflow-hidden rounded-[1.75rem] bg-card transition-all duration-500 ease-[cubic-bezier(0.16,1,0.3,1)]',
+          chatOpen ? 'max-h-[600px] opacity-100 lg:max-h-none lg:w-80' : 'max-h-0 opacity-0 lg:w-0',
+        )}
+      >
+        <div className="flex min-h-0 flex-1 flex-col lg:w-80">
+          <div className="border-b p-4">
+            <p className="font-medium">Consultation chat</p>
+            <p className="text-xs text-muted-foreground">Messages are saved to the visit notes</p>
           </div>
-          <ul className="mt-3 flex flex-col gap-2">
-            {rxList.length === 0 && <li className="text-xs text-muted-foreground">None yet.</li>}
-            {rxList.map((r, i) => (
-              <li key={i} className="rounded-md bg-brand-soft px-3 py-2 text-sm">
-                <span className="font-medium">{r.drug}</span> {r.dosage}
-                <span className="block text-xs text-muted-foreground">{r.frequency}</span>
+          <ul className="flex min-h-48 flex-1 flex-col gap-2 overflow-y-auto p-4">
+            {messages.map((m, i) => (
+              <li
+                key={i}
+                className={cn(
+                  'max-w-[85%] animate-in rounded-2xl px-3.5 py-2.5 text-sm fade-in-0 slide-in-from-bottom-2 duration-300',
+                  m.from === 'me' ? 'self-end rounded-br-md bg-foreground text-background' : 'self-start rounded-bl-md bg-muted',
+                )}
+              >
+                {m.text}
               </li>
             ))}
           </ul>
-        </section>
+          <form
+            className="flex gap-2 border-t p-3"
+            onSubmit={(e) => {
+              e.preventDefault()
+              send()
+            }}
+          >
+            <label htmlFor="chat-input" className="sr-only">
+              Message
+            </label>
+            <input
+              id="chat-input"
+              value={draft}
+              onChange={(e) => setDraft(e.target.value)}
+              placeholder="Type a message"
+              className="h-10 flex-1 rounded-full bg-muted px-4 text-sm outline-none focus:ring-2 focus:ring-ring/40"
+            />
+            <button
+              type="submit"
+              aria-label="Send message"
+              className="flex size-10 items-center justify-center rounded-full bg-brand text-primary-foreground transition-transform hover:scale-105"
+            >
+              <Send className="size-4" />
+            </button>
+          </form>
+        </div>
       </aside>
 
       <Dialog open={rxOpen} onOpenChange={setRxOpen}>
-        <DialogContent className="sm:max-w-md">
+        <DialogContent className="rounded-3xl sm:max-w-md">
           <form onSubmit={addRx} className="flex flex-col gap-4">
             <DialogHeader>
               <DialogTitle>New prescription</DialogTitle>
@@ -122,21 +249,43 @@ export default function DoctorConsultationPage() {
             </DialogHeader>
             <div className="flex flex-col gap-2">
               <Label htmlFor="drug">Medicine</Label>
-              <Input id="drug" required value={draft.drug} onChange={(e) => setDraft({ ...draft, drug: e.target.value })} />
+              <Input id="drug" required value={rxDraft.drug} onChange={(e) => setRxDraft({ ...rxDraft, drug: e.target.value })} />
             </div>
             <div className="flex flex-col gap-2">
               <Label htmlFor="dosage">Dosage</Label>
-              <Input id="dosage" placeholder="e.g. 10 mg" value={draft.dosage} onChange={(e) => setDraft({ ...draft, dosage: e.target.value })} />
+              <Input id="dosage" placeholder="e.g. 10 mg" value={rxDraft.dosage} onChange={(e) => setRxDraft({ ...rxDraft, dosage: e.target.value })} />
             </div>
             <div className="flex flex-col gap-2">
               <Label htmlFor="freq">How often</Label>
-              <Input id="freq" placeholder="e.g. Once daily" value={draft.frequency} onChange={(e) => setDraft({ ...draft, frequency: e.target.value })} />
+              <Input id="freq" placeholder="e.g. Once daily" value={rxDraft.frequency} onChange={(e) => setRxDraft({ ...rxDraft, frequency: e.target.value })} />
             </div>
             <DialogFooter>
-              <DialogClose render={<Button type="button" variant="ghost" />}>Cancel</DialogClose>
-              <Button type="submit">Add prescription</Button>
+              <DialogClose render={<Button type="button" variant="ghost" className="rounded-full" />}>Cancel</DialogClose>
+              <Button type="submit" className="rounded-full">
+                Add prescription
+              </Button>
             </DialogFooter>
           </form>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={endOpen} onOpenChange={setEndOpen}>
+        <DialogContent className="rounded-3xl sm:max-w-sm">
+          <DialogHeader>
+            <DialogTitle>End consultation?</DialogTitle>
+            <DialogDescription>
+              Your notes and {rxList.length} prescription(s) will be saved to the patient&apos;s record.
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter>
+            <DialogClose render={<Button variant="ghost" className="rounded-full" />}>Stay</DialogClose>
+            <Button
+              className="rounded-full bg-destructive text-primary-foreground hover:bg-destructive/90"
+              onClick={endCall}
+            >
+              End call
+            </Button>
+          </DialogFooter>
         </DialogContent>
       </Dialog>
     </div>

@@ -5,7 +5,7 @@ import { toast } from 'sonner'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
-import { findAccount, saveAccount, saveSession, type Session } from '@/lib/session'
+import { findAccount, saveAccount, saveSession } from '@/lib/session'
 import { cn } from '@/lib/utils'
 
 const modes = ['Sign in', 'Create account'] as const
@@ -21,22 +21,18 @@ export function AuthForm() {
     e.preventDefault()
     const data = new FormData(e.currentTarget)
     const email = String(data.get('email') ?? '').trim().toLowerCase()
-    const password = String(data.get('password') ?? '')
     const typedName = String(data.get('name') ?? '').trim()
 
     setLoading(true)
 
-    let session: Session
+    let name = typedName || email.split('@')[0]
     if (isSignup) {
-      session = { name: typedName || email.split('@')[0], email, password, role } as unknown as Session
-      saveAccount(session)
+      saveAccount({ name, email, role })
     } else {
       const found = findAccount(email)
-      session = (found ?? { name: email.split('@')[0], email, password, role }) as unknown as Session
+      if (found) name = found.name
     }
-
-    // Save the session so the portal lets you in
-    saveSession({ ...(session as object), role } as unknown as Session)
+    saveSession({ name, email, role }, true)
 
     setTimeout(() => {
       toast.success(isSignup ? 'Account created' : 'Welcome back')
