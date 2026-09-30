@@ -30,7 +30,7 @@ export function Hero() {
               Your doctor, <span className="text-brand">one tap</span> away.
             </h1>
             <p className="mt-6 max-w-sm animate-in fade-in-0 slide-in-from-bottom-6 fill-mode-both leading-relaxed text-muted-foreground delay-200 duration-1000">
-              Consult licensed physicians over secure video, manage prescriptions and settle bills — all in one calm, private space.
+              Consult licensed physicians over secure video, manage prescriptions and settle bills, all in one calm, private space.
             </p>
             <div className="mt-10 flex animate-in flex-wrap items-center gap-3 fade-in-0 slide-in-from-bottom-6 fill-mode-both delay-300 duration-1000">
               <BookingDialog

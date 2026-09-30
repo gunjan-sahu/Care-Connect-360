@@ -1,9 +1,9 @@
 'use client'
 
 import { useState, type ReactNode } from 'react'
-import Link from 'next/link'
-import { ArrowUpRight, CalendarCheck, ChevronsLeft, ListChecks, Plus, Receipt, Video } from 'lucide-react'
+import { CalendarCheck, ChevronsLeft, ListChecks, Plus, Receipt, Video } from 'lucide-react'
 import { Logo } from '@/components/logo'
+import { LogoMark } from '@/components/logo-mark'
 import { Button } from '@/components/ui/button'
 import { BookingDialog } from '@/components/booking-dialog'
 import { cn } from '@/lib/utils'
@@ -28,17 +28,7 @@ export function LandingShell({ children }: { children: ReactNode }) {
         )}
       >
         <div className={cn('flex h-16 items-center', collapsed ? 'justify-center' : 'px-1')}>
-          {collapsed ? (
-            <Link
-              href="/"
-              aria-label="CareConnect360 home"
-              className="flex size-6 items-center justify-center rounded-full border border-foreground/80"
-            >
-              <span className="size-2 rounded-full bg-brand" />
-            </Link>
-          ) : (
-            <Logo className="text-xs" />
-          )}
+          {collapsed ? <LogoMark /> : <Logo className="text-xs" />}
         </div>
 
         <BookingDialog
@@ -79,37 +69,27 @@ export function LandingShell({ children }: { children: ReactNode }) {
           </ul>
         </nav>
 
-        <div className="flex flex-col gap-2">
-          {!collapsed && (
-            <Link
-              href="/login"
-              className="flex h-10 items-center justify-center rounded-2xl text-sm transition-colors hover:bg-muted"
-            >
-              Sign in
-            </Link>
-          )}
-          <Button
-            nativeButton={false}
-            render={<Link href="/dashboard" aria-label="Open portal" />}
-            className={cn('h-11 rounded-2xl', collapsed && 'px-0')}
-          >
-            {!collapsed && 'Open portal'}
-            <ArrowUpRight data-icon={collapsed ? undefined : 'inline-end'} />
-          </Button>
-        </div>
+        {!collapsed && (
+          <div className="mb-3 rounded-2xl bg-brand-soft p-4 text-sm">
+            <p className="font-medium text-accent-foreground">Emergency?</p>
+            <p className="mt-1 text-xs text-muted-foreground">
+              CareConnect is not for emergencies. Call 112 right away.
+            </p>
+          </div>
+        )}
 
         <button
           type="button"
           onClick={() => setCollapsed((c) => !c)}
           aria-label={collapsed ? 'Expand sidebar' : 'Collapse sidebar'}
           aria-expanded={!collapsed}
-          className="mt-3 flex h-9 items-center justify-center rounded-xl text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
+          className="flex h-9 items-center justify-center rounded-xl text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
         >
           <ChevronsLeft className={cn('size-4 transition-transform duration-500', collapsed && 'rotate-180')} />
         </button>
       </aside>
 
-            <div
+      <div
         style={{ '--sidebar-space': collapsed ? '6.25rem' : '17.5rem' } as React.CSSProperties}
         className={cn(
           'transition-[padding] duration-500 ease-[cubic-bezier(0.16,1,0.3,1)]',

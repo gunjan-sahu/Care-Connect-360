@@ -99,7 +99,7 @@ export function Services() {
               </div>
               <DialogHeader>
                 <p className="font-mono text-xs text-muted-foreground">
-                  {active.n} — {active.tag.toUpperCase()}
+                  {active.n} · {active.tag.toUpperCase()}
                 </p>
                 <DialogTitle className="text-2xl leading-tight font-medium tracking-tight">{active.title}</DialogTitle>
                 <DialogDescription className="leading-relaxed">{active.body}</DialogDescription>

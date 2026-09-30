@@ -28,7 +28,7 @@ export function VideoRoom() {
   const [seconds, setSeconds] = useState(0)
   const [draft, setDraft] = useState('')
   const [messages, setMessages] = useState<Message[]>([
-    { from: 'doctor', text: 'Hi Jordan, I can see your recent BP readings. How have you been feeling?' },
+    { from: 'doctor', text: 'Hi Gunjan, I can see your recent BP readings. How have you been feeling?' },
     { from: 'me', text: 'Better overall, a bit tired in the afternoons.' },
   ])
 
@@ -49,7 +49,7 @@ export function VideoRoom() {
   return (
     <div className="grid gap-3 lg:grid-cols-[1fr_auto]">
       <section className="relative min-h-[60svh] overflow-hidden rounded-[1.75rem] bg-foreground lg:min-h-[calc(100svh-7rem)]">
-        <Image src="/images/doctor-call.png" alt="Dr. Amara Okafor on video" fill priority sizes="70vw" className="object-cover" />
+        <Image src="/images/doctor-call.png" alt="Dr. Ananya Iyer on video" fill priority sizes="70vw" className="object-cover" />
 
         <div className="absolute top-4 left-4 flex items-center gap-2 rounded-full bg-card/85 px-3 py-1.5 text-xs backdrop-blur-md">
           <span className="relative flex size-2">
@@ -62,7 +62,7 @@ export function VideoRoom() {
         </div>
 
         <div className="absolute top-4 right-4 rounded-2xl bg-card/85 px-4 py-2.5 backdrop-blur-md">
-          <p className="text-sm font-medium">Dr. Amara Okafor</p>
+          <p className="text-sm font-medium">Dr. Ananya Iyer</p>
           <p className="text-xs text-muted-foreground">General Practice</p>
         </div>
 

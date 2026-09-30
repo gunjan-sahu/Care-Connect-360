@@ -35,7 +35,7 @@ export function BillingView({ invoices }: { invoices: Invoice[] }) {
     setLoading(true)
     setTimeout(() => {
       setItems((prev) => prev.map((i) => (i.id === paying.id ? { ...i, status: 'Paid' } : i)))
-      toast.success(`${paying.id} paid`, { description: `${usd(paying.amount - paying.covered)} charged to Visa •• 4242` })
+      toast.success(`${paying.id} paid`, { description: `${usd(paying.amount - paying.covered)} charged to card XXXX XXXX 4242` })
       setLoading(false)
       setPaying(null)
     }, 1200)
@@ -72,8 +72,8 @@ export function BillingView({ invoices }: { invoices: Invoice[] }) {
         <div className="mt-3 flex aspect-[1.7] flex-col justify-between rounded-2xl bg-gradient-to-br from-brand to-accent-foreground p-4 text-primary-foreground">
           <CreditCard className="size-5" aria-hidden="true" />
           <div>
-            <p className="font-mono tracking-widest">•••• 4242</p>
-            <p className="text-xs opacity-80">Jordan Miles · 08/29</p>
+            <p className="font-mono tracking-widest">XXXX XXXX 424</p>
+            <p className="text-xs opacity-80"> Gunjan Patel · 08/29</p>
           </div>
         </div>
       </section>
@@ -159,7 +159,7 @@ export function BillingView({ invoices }: { invoices: Invoice[] }) {
             )}
             <div className="flex flex-col gap-2">
               <Label htmlFor="card">Card</Label>
-              <Input id="card" defaultValue="4242 4242 4242 4242" inputMode="numeric" className="h-11 rounded-xl font-mono" required />
+              <Input id="card" defaultValue="XXXX XXXX XXXX 4242" readOnly className="h-11 rounded-xl font-mono" />
             </div>
             <DialogFooter>
               <Button type="submit" disabled={loading} className="h-11 w-full rounded-full">

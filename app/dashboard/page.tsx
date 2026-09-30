@@ -17,7 +17,7 @@ export default function OverviewPage() {
         <Image src="/images/hero-helix.png" alt="" fill sizes="50vw" className="animate-float object-contain object-right opacity-70 mix-blend-screen invert hue-rotate-180 brightness-75 contrast-150" />
         <div className="relative max-w-md">
           <p className="text-xs tracking-[0.2em] text-background/60 uppercase">Next consultation</p>
-          <h2 className="mt-3 text-3xl font-medium tracking-tight sm:text-4xl">Good afternoon, Jordan.</h2>
+          <h2 className="mt-3 text-3xl font-medium tracking-tight sm:text-4xl">Good afternoon, Gunjan.</h2>
           <p className="mt-3 text-background/70">
             {next.doctor} · {next.specialty} · Today at {next.time}
           </p>

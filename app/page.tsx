@@ -1,7 +1,3 @@
-//the work of this page is to divded the page into different sections
-//like header, the main landing page
-//kaunsa page kaha rhega vo decide ke liye ye page banaya gya hai
-
 import { SiteHeader } from '@/components/landing/site-header'
 import { LandingShell } from '@/components/landing/landing-shell'
 import { Hero } from '@/components/landing/hero'

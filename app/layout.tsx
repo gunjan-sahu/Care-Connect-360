@@ -14,25 +14,12 @@ const geistMono = Geist_Mono({
 })
 
 export const metadata: Metadata = {
-  title: 'CareConnect360 — Virtual Care, Reimagined',
+  title: 'CareConnect',
   description:
-    'CareConnect360 is a telemedicine platform for virtual consultations, prescription management, secure video visits and transparent billing.',
+    'CareConnect is a telemedicine platform for virtual consultations, prescription management, secure video visits and transparent billing.',
   icons: {
-    icon: [
-      {
-        url: '/icon-light-32x32.png',
-        media: '(prefers-color-scheme: light)',
-      },
-      {
-        url: '/icon-dark-32x32.png',
-        media: '(prefers-color-scheme: dark)',
-      },
-      {
-        url: '/icon.svg',
-        type: 'image/svg+xml',
-      },
-    ],
-    apple: '/apple-icon.png',
+    icon: '/images/careconnect-logo.png',
+    apple: '/images/careconnect-logo.png',
   },
 }
 
