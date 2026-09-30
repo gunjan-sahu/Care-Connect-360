@@ -1,7 +1,6 @@
 'use client'
 
 import { useState } from 'react'
-import { useRouter } from 'next/navigation'
 import { toast } from 'sonner'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -12,7 +11,6 @@ const modes = ['Sign in', 'Create account'] as const
 const roles = ['Patient', 'Doctor'] as const
 
 export function AuthForm() {
-  import { useRouter } from 'next/navigation'
   const [mode, setMode] = useState<(typeof modes)[number]>('Sign in')
   const [role, setRole] = useState<(typeof roles)[number]>('Patient')
   const [loading, setLoading] = useState(false)
@@ -23,7 +21,7 @@ export function AuthForm() {
     setLoading(true)
     setTimeout(() => {
       toast.success(isSignup ? 'Account created' : 'Welcome back')
-              window.location.assign(role === 'Doctor' ? '/doctor' : '/dashboard')
+      window.location.assign(role === 'Doctor' ? '/doctor' : '/dashboard')
     }, 900)
   }
 
