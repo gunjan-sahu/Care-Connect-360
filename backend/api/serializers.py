@@ -36,7 +36,7 @@ class AppointmentSerializer(serializers.ModelSerializer):
             "date", "time", "kind", "status", "reason",
             "room_number", "discharge_date", "test_results",
         ]
-        read_only_fields = ["status", "room_number", "discharge_date", "test_results"]
+        read_only_fields = ["patient", "status", "room_number", "discharge_date", "test_results"]
 
 
 class PrescriptionSerializer(serializers.ModelSerializer):
@@ -48,7 +48,7 @@ class PrescriptionSerializer(serializers.ModelSerializer):
             "id", "patient", "doctor", "doctor_name", "name", "dosage", "frequency",
             "refills_left", "supply_days", "supply_total", "status", "created_at",
         ]
-        read_only_fields = ["refills_left", "supply_days", "supply_total", "status"]
+        read_only_fields = ["doctor", "refills_left", "supply_days", "supply_total", "status"]
 
 
 class InvoiceSerializer(serializers.ModelSerializer):
