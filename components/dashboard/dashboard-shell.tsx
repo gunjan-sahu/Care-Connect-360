@@ -5,13 +5,11 @@ import Link from 'next/link'
 import { usePathname, useRouter } from 'next/navigation'
 import { clearSession, getSession, type Session } from '@/lib/session'
 import { usePersisted } from '@/lib/persist'
-import { useMembership } from '@/lib/membership'
 import { prescriptions } from '@/lib/data'
 import {
   Bell,
   CalendarDays,
   ChevronsLeft,
-  Crown,
   LayoutGrid,
   LogOut,
   Pill,
@@ -39,7 +37,7 @@ const nav = [
 const notifications = [
   { t: 'Dr. Iyer is ready in 15 min', d: 'Video consultation · 14:30', unread: true },
   { t: 'Atorvastatin refill due', d: '4 days of supply left', unread: true },
-  { t: 'Invoice INV-2048 issued', d: '₹30.00 after insurance', unread: false },
+  { t: 'Invoice INV-2048 issued', d: '₹300.00 after insurance', unread: false },
 ]
 
 function NavList({ collapsed, onNavigate }: { collapsed?: boolean; onNavigate?: () => void }) {
@@ -85,7 +83,6 @@ export function DashboardShell({ children }: { children: ReactNode }) {
   const [collapsed, setCollapsed] = useState(false)
   const [mobileOpen, setMobileOpen] = useState(false)
   const [user, setUser] = useState<Session | null>(null)
-  const [member] = useMembership()
   const pathname = usePathname()
   const router = useRouter()
   const current = nav.find((n) => (n.href === '/dashboard' ? pathname === n.href : pathname.startsWith(n.href)))
@@ -138,17 +135,6 @@ export function DashboardShell({ children }: { children: ReactNode }) {
           <NavList collapsed={collapsed} />
         </nav>
 
-        {!collapsed && (
-          <Link
-            href={member.active ? '/dashboard/profile' : '/#pricing'}
-            className="mb-3 block rounded-2xl bg-brand-soft p-4 text-sm transition-colors hover:bg-brand-soft/70"
-          >
-            <p className="font-medium text-accent-foreground">
-              {member.active ? 'Care+ member' : 'Upgrade to Care+'}
-            </p>
-            <p className="mt-1 text-xs text-muted-foreground">Priority slots & ₹25 visits.</p>
-          </Link>
-        )}
         <button
           type="button"
           onClick={() => setCollapsed((c) => !c)}
@@ -240,12 +226,7 @@ export function DashboardShell({ children }: { children: ReactNode }) {
                   />
                 }
               >
-                <span
-                  className={cn(
-                    'flex size-8 items-center justify-center rounded-full bg-brand-soft text-xs font-medium text-accent-foreground',
-                    member.active && 'ring-2 ring-amber-400/80 ring-offset-2 ring-offset-card',
-                  )}
-                >
+                <span className="flex size-8 items-center justify-center rounded-full bg-brand-soft text-xs font-medium text-accent-foreground">
                   {initials}
                 </span>
                 <span className="hidden text-sm sm:block">{name}</span>
@@ -254,19 +235,7 @@ export function DashboardShell({ children }: { children: ReactNode }) {
                 <div className="px-3 py-2">
                   <p className="text-sm font-medium">{name}</p>
                   <p className="text-xs text-muted-foreground">Patient · ID 40219</p>
-                  {member.active && (
-                    <span className="mt-2 inline-flex items-center gap-1 rounded-full bg-amber-100 px-2 py-0.5 text-[11px] font-medium text-amber-800">
-                      <Crown className="size-3" aria-hidden="true" />
-                      Care+ member
-                    </span>
-                  )}
                 </div>
-                <Link
-                  href="/dashboard/profile"
-                  className="flex w-full items-center gap-2 rounded-xl px-3 py-2.5 text-sm transition-colors hover:bg-muted"
-                >
-                  My profile
-                </Link>
                 <button
                   type="button"
                   onClick={signOut}

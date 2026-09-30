@@ -1,13 +1,10 @@
 'use client'
 
 import { useState } from 'react'
-import Link from 'next/link'
 import { Check } from 'lucide-react'
 import { Reveal } from '@/components/reveal'
 import { Button } from '@/components/ui/button'
 import { BookingDialog } from '@/components/booking-dialog'
-import { CarePlusDialog } from '@/components/care-plus-dialog'
-import { useMembership } from '@/lib/membership'
 import { cn } from '@/lib/utils'
 
 const plans = [
@@ -37,7 +34,6 @@ const plans = [
 
 export function Pricing() {
   const [yearly, setYearly] = useState(true)
-  const [member] = useMembership()
 
   return (
     <section id="pricing" className="scroll-mt-24 px-3 sm:px-6">
@@ -84,9 +80,7 @@ export function Pricing() {
               <div className="flex items-center justify-between">
                 <h3 className="font-medium">{p.name}</h3>
                 {p.featured && (
-                  <span className="rounded-full bg-brand px-2.5 py-1 text-xs text-primary-foreground">
-                    {member.active ? 'Your plan' : 'Most popular'}
-                  </span>
+                  <span className="rounded-full bg-brand px-2.5 py-1 text-xs text-primary-foreground">Most popular</span>
                 )}
               </div>
               <p className="mt-6 flex items-baseline gap-1">
@@ -104,36 +98,16 @@ export function Pricing() {
                   </li>
                 ))}
               </ul>
-
-              {p.featured ? (
-                member.active ? (
+              <BookingDialog
+                trigger={
                   <Button
-                    variant="secondary"
-                    nativeButton={false}
-                    render={<Link href="/dashboard/profile" />}
+                    variant={p.featured ? 'secondary' : 'outline'}
                     className="mt-8 h-11 rounded-full bg-transparent"
                   >
-                    Care+ active, view profile
+                    Get started
                   </Button>
-                ) : (
-                  <CarePlusDialog
-                    yearly={yearly}
-                    trigger={
-                      <Button variant="secondary" className="mt-8 h-11 rounded-full bg-transparent">
-                        Join Care+
-                      </Button>
-                    }
-                  />
-                )
-              ) : (
-                <BookingDialog
-                  trigger={
-                    <Button variant="outline" className="mt-8 h-11 rounded-full bg-transparent">
-                      Get started
-                    </Button>
-                  }
-                />
-              )}
+                }
+              />
             </Reveal>
           ))}
         </div>
