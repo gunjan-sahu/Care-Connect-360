@@ -1,12 +1,17 @@
 'use client'
 
-import { useState, type ReactNode } from 'react'
+import { useEffect, useState, type ReactNode } from 'react'
 import Link from 'next/link'
-import { usePathname } from 'next/navigation'
+import { usePathname, useRouter } from 'next/navigation'
+import { clearSession, getSession, type Session } from '@/lib/session'
+import { usePersisted } from '@/lib/persist'
+import { useMembership } from '@/lib/membership'
+import { prescriptions } from '@/lib/data'
 import {
   Bell,
   CalendarDays,
   ChevronsLeft,
+  Crown,
   LayoutGrid,
   LogOut,
   Pill,
@@ -34,11 +39,13 @@ const nav = [
 const notifications = [
   { t: 'Dr. Iyer is ready in 15 min', d: 'Video consultation · 14:30', unread: true },
   { t: 'Atorvastatin refill due', d: '4 days of supply left', unread: true },
-  { t: 'Invoice INV-2048 issued', d: '$30.00 after insurance', unread: false },
+  { t: 'Invoice INV-2048 issued', d: '₹30.00 after insurance', unread: false },
 ]
 
 function NavList({ collapsed, onNavigate }: { collapsed?: boolean; onNavigate?: () => void }) {
   const pathname = usePathname()
+  const [rx] = usePersisted('cc360-prescriptions', prescriptions)
+  const refillCount = rx.filter((p) => p.status === 'Refill due').length
   return (
     <ul className="flex flex-col gap-1">
       {nav.map((item) => {
@@ -61,9 +68,9 @@ function NavList({ collapsed, onNavigate }: { collapsed?: boolean; onNavigate?: 
               <span className={cn('whitespace-nowrap transition-opacity duration-300', collapsed && 'sr-only')}>
                 {item.label}
               </span>
-              {item.label === 'Prescriptions' && !collapsed && (
+              {item.label === 'Prescriptions' && !collapsed && refillCount > 0 && (
                 <span className="ml-auto flex size-5 items-center justify-center rounded-full bg-brand text-[10px] text-primary-foreground">
-                  1
+                  {refillCount}
                 </span>
               )}
             </Link>
@@ -77,8 +84,34 @@ function NavList({ collapsed, onNavigate }: { collapsed?: boolean; onNavigate?: 
 export function DashboardShell({ children }: { children: ReactNode }) {
   const [collapsed, setCollapsed] = useState(false)
   const [mobileOpen, setMobileOpen] = useState(false)
+  const [user, setUser] = useState<Session | null>(null)
+  const [member] = useMembership()
   const pathname = usePathname()
+  const router = useRouter()
   const current = nav.find((n) => (n.href === '/dashboard' ? pathname === n.href : pathname.startsWith(n.href)))
+
+  useEffect(() => {
+    const s = getSession()
+    if (!s) router.replace('/login')
+    else setUser(s)
+  }, [router])
+
+  const name = user?.name ?? 'Gunjan Sahu'
+  const initials = name
+    .split(' ')
+    .map((p) => p[0])
+    .join('')
+    .slice(0, 2)
+    .toUpperCase()
+
+  function signOut() {
+    clearSession()
+    router.push('/login')
+  }
+
+  if (pathname.startsWith('/dashboard/consultation')) {
+    return <>{children}</>
+  }
 
   return (
     <div className="flex min-h-svh gap-3 p-3">
@@ -106,10 +139,15 @@ export function DashboardShell({ children }: { children: ReactNode }) {
         </nav>
 
         {!collapsed && (
-          <div className="mb-3 rounded-2xl bg-brand-soft p-4 text-sm">
-            <p className="font-medium text-accent-foreground">Care+ member</p>
-            <p className="mt-1 text-xs text-muted-foreground">Priority slots & $25 visits.</p>
-          </div>
+          <Link
+            href={member.active ? '/dashboard/profile' : '/#pricing'}
+            className="mb-3 block rounded-2xl bg-brand-soft p-4 text-sm transition-colors hover:bg-brand-soft/70"
+          >
+            <p className="font-medium text-accent-foreground">
+              {member.active ? 'Care+ member' : 'Upgrade to Care+'}
+            </p>
+            <p className="mt-1 text-xs text-muted-foreground">Priority slots & ₹25 visits.</p>
+          </Link>
         )}
         <button
           type="button"
@@ -202,23 +240,41 @@ export function DashboardShell({ children }: { children: ReactNode }) {
                   />
                 }
               >
-                <span className="flex size-8 items-center justify-center rounded-full bg-brand-soft text-xs font-medium text-accent-foreground">
-                  
+                <span
+                  className={cn(
+                    'flex size-8 items-center justify-center rounded-full bg-brand-soft text-xs font-medium text-accent-foreground',
+                    member.active && 'ring-2 ring-amber-400/80 ring-offset-2 ring-offset-card',
+                  )}
+                >
+                  {initials}
                 </span>
-                <span className="hidden text-sm sm:block">Gunjan Sahu</span>
+                <span className="hidden text-sm sm:block">{name}</span>
               </PopoverTrigger>
               <PopoverContent align="end" className="w-64 rounded-2xl p-2">
                 <div className="px-3 py-2">
-                  <p className="text-sm font-medium">Gunjan Sahu</p>
+                  <p className="text-sm font-medium">{name}</p>
                   <p className="text-xs text-muted-foreground">Patient · ID 40219</p>
+                  {member.active && (
+                    <span className="mt-2 inline-flex items-center gap-1 rounded-full bg-amber-100 px-2 py-0.5 text-[11px] font-medium text-amber-800">
+                      <Crown className="size-3" aria-hidden="true" />
+                      Care+ member
+                    </span>
+                  )}
                 </div>
                 <Link
-                  href="/"
-                  className="flex items-center gap-2 rounded-xl px-3 py-2.5 text-sm transition-colors hover:bg-muted"
+                  href="/dashboard/profile"
+                  className="flex w-full items-center gap-2 rounded-xl px-3 py-2.5 text-sm transition-colors hover:bg-muted"
+                >
+                  My profile
+                </Link>
+                <button
+                  type="button"
+                  onClick={signOut}
+                  className="flex w-full items-center gap-2 rounded-xl px-3 py-2.5 text-sm transition-colors hover:bg-muted"
                 >
                   <LogOut className="size-4" aria-hidden="true" />
                   Sign out
-                </Link>
+                </button>
               </PopoverContent>
             </Popover>
           </div>

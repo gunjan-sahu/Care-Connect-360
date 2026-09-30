@@ -1,10 +1,13 @@
 'use client'
 
 import { useState } from 'react'
+import Link from 'next/link'
 import { Check } from 'lucide-react'
 import { Reveal } from '@/components/reveal'
 import { Button } from '@/components/ui/button'
 import { BookingDialog } from '@/components/booking-dialog'
+import { CarePlusDialog } from '@/components/care-plus-dialog'
+import { useMembership } from '@/lib/membership'
 import { cn } from '@/lib/utils'
 
 const plans = [
@@ -12,14 +15,14 @@ const plans = [
     name: 'Pay per visit',
     monthly: 0,
     yearly: 0,
-    visit: '$80 / visit',
+    visit: '₹80 / visit',
     features: ['Video or chat consults', 'E-prescriptions', 'Itemised invoices'],
   },
   {
     name: 'Care+',
     monthly: 19,
     yearly: 15,
-    visit: '$25 / visit',
+    visit: '₹25 / visit',
     featured: true,
     features: ['Everything in Pay per visit', 'Priority same-day slots', 'Unlimited chat follow-ups', 'Family profiles (up to 4)'],
   },
@@ -34,6 +37,7 @@ const plans = [
 
 export function Pricing() {
   const [yearly, setYearly] = useState(true)
+  const [member] = useMembership()
 
   return (
     <section id="pricing" className="scroll-mt-24 px-3 sm:px-6">
@@ -80,12 +84,14 @@ export function Pricing() {
               <div className="flex items-center justify-between">
                 <h3 className="font-medium">{p.name}</h3>
                 {p.featured && (
-                  <span className="rounded-full bg-brand px-2.5 py-1 text-xs text-primary-foreground">Most popular</span>
+                  <span className="rounded-full bg-brand px-2.5 py-1 text-xs text-primary-foreground">
+                    {member.active ? 'Your plan' : 'Most popular'}
+                  </span>
                 )}
               </div>
               <p className="mt-6 flex items-baseline gap-1">
                 <span key={String(yearly)} className="animate-in text-5xl font-medium tracking-tight fade-in-0 slide-in-from-bottom-2 duration-500">
-                  ${yearly ? p.yearly : p.monthly}
+                  ₹{yearly ? p.yearly : p.monthly}
                 </span>
                 <span className={cn('text-sm', p.featured ? 'text-background/60' : 'text-muted-foreground')}>/ mo</span>
               </p>
@@ -98,16 +104,36 @@ export function Pricing() {
                   </li>
                 ))}
               </ul>
-              <BookingDialog
-                trigger={
+
+              {p.featured ? (
+                member.active ? (
                   <Button
-                    variant={p.featured ? 'secondary' : 'outline'}
+                    variant="secondary"
+                    nativeButton={false}
+                    render={<Link href="/dashboard/profile" />}
                     className="mt-8 h-11 rounded-full bg-transparent"
                   >
-                    Get started
+                    Care+ active, view profile
                   </Button>
-                }
-              />
+                ) : (
+                  <CarePlusDialog
+                    yearly={yearly}
+                    trigger={
+                      <Button variant="secondary" className="mt-8 h-11 rounded-full bg-transparent">
+                        Join Care+
+                      </Button>
+                    }
+                  />
+                )
+              ) : (
+                <BookingDialog
+                  trigger={
+                    <Button variant="outline" className="mt-8 h-11 rounded-full bg-transparent">
+                      Get started
+                    </Button>
+                  }
+                />
+              )}
             </Reveal>
           ))}
         </div>

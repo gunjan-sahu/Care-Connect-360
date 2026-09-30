@@ -17,7 +17,7 @@ import {
 import { StatusPill } from '@/components/dashboard/status-pill'
 import type { Invoice } from '@/lib/data'
 
-const usd = (n: number) => `$${n.toFixed(2)}`
+const usd = (n: number) => `₹${n.toFixed(2)}`
 
 export function BillingView({ invoices }: { invoices: Invoice[] }) {
   const [items, setItems] = useState(invoices)

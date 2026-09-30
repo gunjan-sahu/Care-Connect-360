@@ -195,7 +195,7 @@ export function BookingDialog({ trigger }: { trigger: ReactElement }) {
                 ['Specialty', specialty],
                 ['When', `${day} · ${slot}`],
                 ['Type', mode],
-                ['Estimated cost', '$80 · insurance applied at checkout'],
+                ['Estimated cost', '₹800 · insurance applied at checkout'],
               ].map(([k, v]) => (
                 <div key={k} className="flex items-center justify-between gap-4 px-4 py-3 text-sm">
                   <dt className="text-muted-foreground">{k}</dt>

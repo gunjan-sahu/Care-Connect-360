@@ -4,17 +4,23 @@ import { ArrowUpRight, Video } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { StatusPill } from '@/components/dashboard/status-pill'
 import { Sparkline } from '@/components/dashboard/sparkline'
-import { appointments, invoices, prescriptions, vitals } from '@/lib/data'
+import { BalanceCard, MedicationsCard } from '@/components/dashboard/overview-live'
+import { appointments, vitals } from '@/lib/data'
 
 export default function OverviewPage() {
   const next = appointments[0]
   const upcoming = appointments.filter((a) => a.status === 'Upcoming')
-  const due = invoices.filter((i) => i.status === 'Due').reduce((s, i) => s + i.amount - i.covered, 0)
 
   return (
     <div className="grid gap-3 lg:grid-cols-3">
       <section className="relative overflow-hidden rounded-[1.75rem] bg-foreground p-6 text-background sm:p-8 lg:col-span-2">
-        <Image src="/images/hero-helix.png" alt="" fill sizes="50vw" className="animate-float object-contain object-right opacity-70 mix-blend-screen invert hue-rotate-180 brightness-75 contrast-150" />
+        <Image
+          src="/images/hero-helix.png"
+          alt=""
+          fill
+          sizes="50vw"
+          className="animate-float object-contain object-right opacity-70 mix-blend-screen invert hue-rotate-180 brightness-75 contrast-150"
+        />
         <div className="relative max-w-md">
           <p className="text-xs tracking-[0.2em] text-background/60 uppercase">Next consultation</p>
           <h2 className="mt-3 text-3xl font-medium tracking-tight sm:text-4xl">Good afternoon, Gunjan.</h2>
@@ -42,14 +48,7 @@ export default function OverviewPage() {
         </div>
       </section>
 
-      <section className="flex flex-col justify-between rounded-[1.75rem] bg-card p-6">
-        <p className="text-sm text-muted-foreground">Balance due</p>
-        <p className="mt-2 text-5xl font-medium tracking-tight">${due.toFixed(2)}</p>
-        <p className="mt-1 text-sm text-muted-foreground">After insurance · 1 invoice</p>
-        <Button nativeButton={false} render={<Link href="/dashboard/billing" />} className="mt-6 h-11 rounded-full">
-          Pay now
-        </Button>
-      </section>
+      <BalanceCard />
 
       {vitals.map((v, i) => (
         <section
@@ -91,34 +90,7 @@ export default function OverviewPage() {
         </ul>
       </section>
 
-      <section className="rounded-[1.75rem] bg-card p-6">
-        <div className="flex items-center justify-between">
-          <h2 className="font-medium">Medications</h2>
-          <Link href="/dashboard/prescriptions" className="inline-flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground">
-            All <ArrowUpRight className="size-3.5" />
-          </Link>
-        </div>
-        <ul className="mt-4 flex flex-col gap-4">
-          {prescriptions
-            .filter((p) => p.status !== 'Expired')
-            .map((p) => (
-              <li key={p.id}>
-                <div className="flex items-center justify-between text-sm">
-                  <span className="font-medium">
-                    {p.name} <span className="font-normal text-muted-foreground">{p.dosage}</span>
-                  </span>
-                  <span className="font-mono text-xs text-muted-foreground">{p.supplyDays}d</span>
-                </div>
-                <div className="mt-2 h-1.5 overflow-hidden rounded-full bg-muted">
-                  <div
-                    className={p.status === 'Refill due' ? 'h-full rounded-full bg-brand' : 'h-full rounded-full bg-foreground'}
-                    style={{ width: `${(p.supplyDays / p.supplyTotal) * 100}%` }}
-                  />
-                </div>
-              </li>
-            ))}
-        </ul>
-      </section>
+      <MedicationsCard />
     </div>
   )
 }
