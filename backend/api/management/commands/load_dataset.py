@@ -10,10 +10,14 @@ from django.db import transaction
 
 from api.models import Appointment, Doctor, Invoice, Patient, Prescription
 
-SPECIALTIES = [
-    "General Practice", "Cardiology", "Dermatology",
-    "Psychiatry", "Pediatrics", "Nutrition",
-]
+CONDITION_TO_SPECIALTY = {
+    "Cancer": "Oncology",
+    "Diabetes": "Endocrinology",
+    "Asthma": "Pulmonology",
+    "Hypertension": "Cardiology",
+    "Arthritis": "Rheumatology",
+    "Obesity": "Nutrition",
+}
 KIND_BY_ADMISSION = {"Emergency": "Video", "Urgent": "Video", "Elective": "Follow-up"}
 ROW_LIMIT = 3000  # keep it fast; raise later if you want more
 
@@ -45,7 +49,7 @@ class Command(BaseCommand):
         for _, r in df.drop_duplicates("Doctor").iterrows():
             doctors[r["Doctor"]] = Doctor.objects.create(
                 name=f"Dr. {r['Doctor']}",
-                specialty=random.choice(SPECIALTIES),
+                specialty=CONDITION_TO_SPECIALTY.get(r["Medical Condition"], "General Practice"),
                 hospital=str(r["Hospital"]).strip(),
                 rating=Decimal(str(round(random.uniform(4.2, 5.0), 1))),
             )

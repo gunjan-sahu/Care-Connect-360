@@ -1,6 +1,7 @@
 'use client'
 
 import { useEffect, useRef, useState } from 'react'
+import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { Lock, MessageSquare, Mic, MicOff, MonitorUp, PhoneOff, Send, Stethoscope, Video, VideoOff } from 'lucide-react'
 import { toast } from 'sonner'
@@ -14,85 +15,35 @@ import {
   DialogTitle,
 } from '@/components/ui/dialog'
 import { Button } from '@/components/ui/button'
+import { api } from '@/lib/api'
+import { initialsOf } from '@/lib/format'
+import { getSession } from '@/lib/session'
+import type { Appointment, Paged } from '@/lib/types'
 import { cn } from '@/lib/utils'
 
 type Message = { from: 'doctor' | 'me'; text: string }
 
-const quickReplies = [
-  'Hi',
-  'Hello',
-  'Hey',
-  'Thank you',
-  'Yes',
-  'No',
-  'Can you repeat that?',
-  "I'll get back to you later",
-]
+const quickReplies = ['Hi', 'Hello', 'Thank you', 'Yes', 'No', 'Can you repeat that?', "I'll get back to you later"]
+
 function pick(options: string[]) {
   return options[Math.floor(Math.random() * options.length)]
 }
 
-function doctorReply(text: string): string {
+function doctorReply(text: string, first: string): string {
   const t = text.toLowerCase().trim()
-
-  if (/^(hi|hello|hey)\b/.test(t))
-    return pick([
-      'Hello Gunjan! Good to see you. How are you feeling today?',
-      'Hi Gunjan, thanks for joining. How has your week been?',
-      'Hey Gunjan! Glad you could make it. Any changes since your last visit?',
-    ])
-
-  if (t.includes('thank'))
-    return pick([
-      "You're welcome. Let me know if you have any other questions.",
-      'Happy to help, Gunjan. Anything else on your mind?',
-      'Anytime. Take care of yourself.',
-    ])
-
-  if (t.includes('later'))
-    return pick([
-      'No problem. Take your time, I will be here.',
-      'Sure, message me whenever you are ready.',
-      'That is fine. You can reach me here anytime today.',
-    ])
-
-  if (t.includes('repeat'))
-    return pick([
-      'Of course. I asked how you have been feeling since your last visit.',
-      'Sure. Have you noticed any changes in how you feel lately?',
-      'No worries. I was checking how your recent readings compare with how you feel.',
-    ])
-
-  if (t === 'yes')
-    return pick([
-      'Good to hear. Have you noticed any dizziness or headaches?',
-      'Okay. Is it happening every day or only sometimes?',
-      'Thanks for confirming. Are you sleeping well at night?',
-    ])
-
-  if (t === 'no')
-    return pick([
-      'Alright, noted. Are you taking your medicines on time?',
-      'Okay, that is good. Have you been drinking enough water?',
-      'Understood. Any other symptoms I should know about?',
-    ])
-
-  if (t.includes('tired') || t.includes('pain') || t.includes('headache'))
-    return pick([
-      'Thank you for telling me. How long have you felt this way?',
-      'I see. On a scale of 1 to 10, how strong is it?',
-      'Noted. Does it get worse at a particular time of day?',
-    ])
-
-  return pick([
-    'I understand. Please tell me a little more so I can help.',
-    'Thanks for sharing. Can you describe it in a bit more detail?',
-    'Got it. When did you first notice this?',
-  ])
+  if (/^(hi|hello|hey)\b/.test(t)) return pick([`Hello ${first}! How are you feeling today?`, `Hi ${first}, thanks for joining.`])
+  if (t.includes('thank')) return pick(["You're welcome. Anything else?", `Anytime, ${first}. Take care.`])
+  if (t.includes('later')) return pick(['No problem. Take your time.', 'Sure, message me whenever you are ready.'])
+  if (t.includes('repeat')) return pick(['Of course. How have you been feeling since your last visit?'])
+  if (t === 'yes') return pick(['Good to hear. Any dizziness or headaches?', 'Okay. Are you sleeping well?'])
+  if (t === 'no') return pick(['Noted. Are you taking your medicines on time?', 'Understood. Any other symptoms?'])
+  return pick(['I understand. Please tell me a little more.', 'Thanks for sharing. Can you describe it in more detail?'])
 }
 
 export function VideoRoom() {
   const router = useRouter()
+  const [appt, setAppt] = useState<Appointment | null>(null)
+  const [state, setState] = useState<'loading' | 'ready' | 'none'>('loading')
   const [mic, setMic] = useState(true)
   const [cam, setCam] = useState(true)
   const [chatOpen, setChatOpen] = useState(true)
@@ -101,13 +52,32 @@ export function VideoRoom() {
   const [draft, setDraft] = useState('')
   const [typing, setTyping] = useState(false)
   const listRef = useRef<HTMLUListElement>(null)
-  const [messages, setMessages] = useState<Message[]>([
-    { from: 'doctor', text: 'Hi Gunjan, I can see your recent BP readings. How have you been feeling?' },
-  ])
+  const [messages, setMessages] = useState<Message[]>([])
+
+  const myName = getSession()?.name ?? 'You'
+  const myFirst = myName.split(' ')[0]
+  const doctorName = appt?.doctor_name ?? 'Doctor'
 
   useEffect(() => {
-    const id = setInterval(() => setSeconds((s) => s + 1), 1000)
-    return () => clearInterval(id)
+    const id = new URLSearchParams(window.location.search).get('appointment')
+    const load = id
+      ? api<Appointment>(`/appointments/${id}/`)
+      : api<Paged<Appointment>>('/appointments/?status=Upcoming').then((r) => {
+          if (!r.results[0]) throw new Error('none')
+          return r.results[0]
+        })
+    load
+      .then((a) => {
+        setAppt(a)
+        setMessages([{ from: 'doctor', text: `Hi ${myFirst}, how have you been feeling?` }])
+        setState('ready')
+      })
+      .catch(() => setState('none'))
+  }, [myFirst])
+
+  useEffect(() => {
+    const t = setInterval(() => setSeconds((s) => s + 1), 1000)
+    return () => clearInterval(t)
   }, [])
 
   useEffect(() => {
@@ -123,9 +93,23 @@ export function VideoRoom() {
     setDraft('')
     setTyping(true)
     setTimeout(() => {
-      setMessages((m) => [...m, { from: 'doctor', text: doctorReply(t) }])
+      setMessages((m) => [...m, { from: 'doctor', text: doctorReply(t, myFirst) }])
       setTyping(false)
     }, 1200)
+  }
+
+  if (state === 'loading') return null
+
+  if (state === 'none' || !appt) {
+    return (
+      <div className="flex min-h-svh flex-col items-center justify-center gap-4 p-6 text-center">
+        <p className="text-lg font-medium">No upcoming consultation</p>
+        <p className="max-w-sm text-sm text-muted-foreground">Book a consultation, then join it from your Appointments page.</p>
+        <Button nativeButton={false} render={<Link href="/dashboard/appointments" />} className="rounded-full">
+          Go to appointments
+        </Button>
+      </div>
+    )
   }
 
   const controls = [
@@ -145,15 +129,15 @@ export function VideoRoom() {
             <span className="absolute inset-0 animate-pulse-ring rounded-full bg-brand/40" />
             <span className="absolute inset-4 rounded-full border border-background/20" />
             <span className="relative flex size-28 items-center justify-center rounded-full bg-gradient-to-br from-brand to-accent-foreground text-4xl font-medium text-primary-foreground shadow-2xl sm:size-36 sm:text-5xl">
-              AI
+              {initialsOf(doctorName)}
             </span>
             <span className="absolute right-3 bottom-3 flex size-10 items-center justify-center rounded-full bg-background text-brand shadow-lg">
               <Stethoscope className="size-5" aria-hidden="true" />
             </span>
           </div>
           <div className="text-center text-background">
-            <p className="text-lg font-medium">Dr. Ananya Iyer</p>
-            <p className="text-sm text-background/60">General Practice</p>
+            <p className="text-lg font-medium">{doctorName}</p>
+            <p className="text-sm text-background/60">{appt.specialty}</p>
           </div>
         </div>
 
@@ -171,7 +155,7 @@ export function VideoRoom() {
           {cam ? (
             <div className="flex h-full items-center justify-center">
               <span className="flex size-14 items-center justify-center rounded-full bg-brand text-lg font-medium text-primary-foreground">
-                GS
+                {initialsOf(myName)}
               </span>
             </div>
           ) : (
@@ -248,7 +232,7 @@ export function VideoRoom() {
         <div className="flex min-h-0 flex-1 flex-col lg:w-80">
           <div className="border-b p-4">
             <p className="font-medium">Consultation chat</p>
-            <p className="text-xs text-muted-foreground">Messages are saved to your visit notes</p>
+            <p className="text-xs text-muted-foreground">Demo chat: doctor replies are simulated</p>
           </div>
 
           <ul ref={listRef} className="flex min-h-48 flex-1 flex-col gap-2 overflow-y-auto p-4">
@@ -265,7 +249,7 @@ export function VideoRoom() {
             ))}
             {typing && (
               <li className="self-start rounded-2xl rounded-bl-md bg-muted px-3.5 py-2.5 text-sm text-muted-foreground">
-                Dr. Iyer is typing…
+                {doctorName} is typing…
               </li>
             )}
           </ul>
@@ -317,10 +301,8 @@ export function VideoRoom() {
       <Dialog open={endOpen} onOpenChange={setEndOpen}>
         <DialogContent className="rounded-3xl sm:max-w-sm">
           <DialogHeader>
-            <DialogTitle>End consultation?</DialogTitle>
-            <DialogDescription>
-              Your visit summary and any prescriptions will appear in your portal within a few minutes.
-            </DialogDescription>
+            <DialogTitle>Leave consultation?</DialogTitle>
+            <DialogDescription>Your doctor will mark the visit complete and add any prescriptions to your account.</DialogDescription>
           </DialogHeader>
           <DialogFooter>
             <DialogClose render={<Button variant="ghost" className="rounded-full" />}>Stay</DialogClose>
@@ -328,11 +310,11 @@ export function VideoRoom() {
               className="rounded-full bg-destructive text-primary-foreground hover:bg-destructive/90"
               onClick={() => {
                 setEndOpen(false)
-                toast.success('Consultation ended', { description: `Duration ${time}. Summary on its way.` })
+                toast.success('You left the consultation', { description: `Duration ${time}.` })
                 router.push('/dashboard')
               }}
             >
-              End call
+              Leave
             </Button>
           </DialogFooter>
         </DialogContent>

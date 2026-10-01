@@ -1,80 +1,93 @@
-import { earningsByMonth, payouts } from '@/lib/doctor-data'
-import { cn } from '@/lib/utils'
+'use client'
 
-const inr = (n: number) => `₹${n.toLocaleString('en-IN')}`
+import { useEffect, useState } from 'react'
+import { toast } from 'sonner'
+import { Button } from '@/components/ui/button'
+import { Switch } from '@/components/ui/switch'
+import { getSession } from '@/lib/session'
 
-export default function EarningsPage() {
-  const max = Math.max(...earningsByMonth.map((m) => m.amount))
-  const thisMonth = earningsByMonth[earningsByMonth.length - 1].amount
-  const pending = payouts.filter((p) => p.status === 'Pending').reduce((s, p) => s + p.amount, 0)
+const DAYS = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday']
+const HOURS = Array.from({ length: 13 }, (_, i) => `${String(i + 8).padStart(2, '0')}:00`)
+
+type Day = { on: boolean; from: string; to: string }
+const defaults: Day[] = DAYS.map((_, i) => ({ on: i < 5, from: '09:00', to: '17:00' }))
+
+export default function AvailabilityPage() {
+  const [days, setDays] = useState<Day[]>(defaults)
+  const [key, setKey] = useState<string | null>(null)
+
+  useEffect(() => {
+    const k = `cc360-availability-${getSession()?.id ?? 0}`
+    setKey(k)
+    try {
+      const raw = localStorage.getItem(k)
+      if (raw) setDays(JSON.parse(raw))
+    } catch {}
+  }, [])
+
+  function update(i: number, patch: Partial<Day>) {
+    setDays((prev) => prev.map((d, idx) => (idx === i ? { ...d, ...patch } : d)))
+  }
+
+  function save() {
+    const bad = days.find((d) => d.on && d.to <= d.from)
+    if (bad) {
+      toast.error('End time must be after start time.')
+      return
+    }
+    try {
+      if (key) localStorage.setItem(key, JSON.stringify(days))
+    } catch {}
+    toast.success('Availability saved')
+  }
 
   return (
-    <div className="grid gap-3 lg:grid-cols-3">
-      <section className="rounded-[1.75rem] bg-foreground p-6 text-background">
-        <p className="text-sm text-background/60">This month</p>
-        <p className="mt-2 text-5xl font-medium tracking-tight">{inr(thisMonth)}</p>
-      </section>
-      <section className="rounded-[1.75rem] bg-card p-6">
-        <p className="text-sm text-muted-foreground">Pending payout</p>
-        <p className="mt-2 text-4xl font-medium tracking-tight">{inr(pending)}</p>
-      </section>
-      <section className="rounded-[1.75rem] bg-card p-6">
-        <p className="text-sm text-muted-foreground">Visits this month</p>
-        <p className="mt-2 text-4xl font-medium tracking-tight">58</p>
-      </section>
-
-      <section className="rounded-[1.75rem] bg-card p-5 sm:p-6 lg:col-span-3">
-        <h2 className="font-medium">Last 5 months</h2>
-        <div className="mt-6 flex h-48 items-end gap-3">
-          {earningsByMonth.map((m) => (
-            <div key={m.month} className="flex h-full flex-1 flex-col items-center justify-end gap-2">
-              <div
-                className="w-full rounded-t-xl bg-brand transition-[height] duration-1000"
-                style={{ height: `${(m.amount / max) * 85}%` }}
-                title={inr(m.amount)}
-              />
-              <span className="text-xs text-muted-foreground">{m.month}</span>
-            </div>
-          ))}
+    <section className="rounded-[1.75rem] bg-card p-5 sm:p-6">
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <div>
+          <h2 className="font-medium">Weekly availability</h2>
+          <p className="text-sm text-muted-foreground">Saved on this device only for now.</p>
         </div>
-      </section>
+        <Button className="rounded-full" onClick={save}>
+          Save changes
+        </Button>
+      </div>
 
-      <section className="rounded-[1.75rem] bg-card p-5 sm:p-6 lg:col-span-3">
-        <h2 className="font-medium">Payouts</h2>
-        <div className="mt-4 overflow-x-auto">
-          <table className="w-full min-w-[480px] text-sm">
-            <thead>
-              <tr className="text-left text-xs text-muted-foreground">
-                <th className="pb-3 font-normal">ID</th>
-                <th className="pb-3 font-normal">Date</th>
-                <th className="pb-3 font-normal">Visits</th>
-                <th className="pb-3 text-right font-normal">Amount</th>
-                <th className="pb-3 pl-4 font-normal">Status</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y">
-              {payouts.map((p) => (
-                <tr key={p.id}>
-                  <td className="py-3.5 font-mono text-xs">{p.id}</td>
-                  <td className="py-3.5">{p.date}</td>
-                  <td className="py-3.5">{p.visits}</td>
-                  <td className="py-3.5 text-right font-medium">{inr(p.amount)}</td>
-                  <td className="py-3.5 pl-4">
-                    <span
-                      className={cn(
-                        'inline-flex rounded-full px-2.5 py-1 text-xs font-medium',
-                        p.status === 'Paid' ? 'bg-success/15 text-success' : 'bg-muted text-muted-foreground',
-                      )}
-                    >
-                      {p.status}
-                    </span>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-      </section>
-    </div>
+      <ul className="mt-6 divide-y rounded-2xl border">
+        {days.map((d, i) => (
+          <li key={DAYS[i]} className="flex flex-wrap items-center gap-4 px-4 py-3.5">
+            <Switch checked={d.on} onCheckedChange={(v) => update(i, { on: Boolean(v) })} aria-label={`Available on ${DAYS[i]}`} />
+            <span className="w-28 text-sm font-medium">{DAYS[i]}</span>
+            {d.on ? (
+              <div className="flex items-center gap-2 text-sm">
+                <select
+                  value={d.from}
+                  onChange={(e) => update(i, { from: e.target.value })}
+                  className="h-9 rounded-lg border bg-transparent px-2 font-mono"
+                  aria-label={`${DAYS[i]} start time`}
+                >
+                  {HOURS.map((h) => (
+                    <option key={h}>{h}</option>
+                  ))}
+                </select>
+                <span className="text-muted-foreground">to</span>
+                <select
+                  value={d.to}
+                  onChange={(e) => update(i, { to: e.target.value })}
+                  className="h-9 rounded-lg border bg-transparent px-2 font-mono"
+                  aria-label={`${DAYS[i]} end time`}
+                >
+                  {HOURS.map((h) => (
+                    <option key={h}>{h}</option>
+                  ))}
+                </select>
+              </div>
+            ) : (
+              <span className="text-sm text-muted-foreground">Unavailable</span>
+            )}
+          </li>
+        ))}
+      </ul>
+    </section>
   )
 }

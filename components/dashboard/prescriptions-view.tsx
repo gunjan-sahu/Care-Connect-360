@@ -14,26 +14,33 @@ import {
   DialogTitle,
 } from '@/components/ui/dialog'
 import { StatusPill } from '@/components/dashboard/status-pill'
-import type { Prescription } from '@/lib/data'
-import { usePersisted } from '@/lib/persist'
+import { api } from '@/lib/api'
+import { notifyChanged, useApi } from '@/lib/use-api'
+import type { Paged, Prescription } from '@/lib/types'
 import { cn } from '@/lib/utils'
 
 const pharmacies = ['CityCare Pharmacy · 0.4 mi', 'Wellness Rx · 1.2 mi', 'Home delivery · 2 days']
 
-export function PrescriptionsView({ prescriptions }: { prescriptions: Prescription[] }) {
-  const [items, setItems] = usePersisted('cc360-prescriptions', prescriptions)
+export function PrescriptionsView() {
+  const { data, loading, error } = useApi<Paged<Prescription>>('/prescriptions/')
+  const items = data?.results ?? []
   const [refill, setRefill] = useState<Prescription | null>(null)
   const [pharmacy, setPharmacy] = useState(pharmacies[0])
+  const [saving, setSaving] = useState(false)
 
-  function confirmRefill() {
+  async function confirmRefill() {
     if (!refill) return
-    setItems((prev) =>
-      prev.map((p) =>
-        p.id === refill.id ? { ...p, status: 'Active', supplyDays: p.supplyTotal, refillsLeft: Math.max(0, p.refillsLeft - 1) } : p,
-      ),
-    )
-    toast.success(`${refill.name} refill requested`, { description: `Sending to ${pharmacy.split(' · ')[0]}.` })
-    setRefill(null)
+    setSaving(true)
+    try {
+      await api(`/prescriptions/${refill.id}/refill/`, { method: 'POST' })
+      toast.success(`${refill.name} refill requested`, { description: `Sending to ${pharmacy.split(' · ')[0]}.` })
+      notifyChanged()
+      setRefill(null)
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : 'Could not request refill.')
+    } finally {
+      setSaving(false)
+    }
   }
 
   return (
@@ -42,7 +49,7 @@ export function PrescriptionsView({ prescriptions }: { prescriptions: Prescripti
         {[
           ['Active', items.filter((p) => p.status !== 'Expired').length],
           ['Refills due', items.filter((p) => p.status === 'Refill due').length],
-          ['Refills remaining', items.reduce((s, p) => s + p.refillsLeft, 0)],
+          ['Refills remaining', items.reduce((s, p) => s + p.refills_left, 0)],
         ].map(([l, v]) => (
           <div key={l} className="rounded-[1.75rem] bg-card p-6">
             <p className="text-sm text-muted-foreground">{l}</p>
@@ -51,9 +58,17 @@ export function PrescriptionsView({ prescriptions }: { prescriptions: Prescripti
         ))}
       </div>
 
+      {loading && <p className="mt-3 rounded-[1.75rem] bg-card p-10 text-center text-sm text-muted-foreground">Loading…</p>}
+      {error && <p className="mt-3 rounded-[1.75rem] bg-card p-10 text-center text-sm text-destructive">{error}</p>}
+      {!loading && !error && items.length === 0 && (
+        <p className="mt-3 rounded-[1.75rem] bg-card p-10 text-center text-sm text-muted-foreground">
+          No prescriptions yet. Your doctor will add them after a consultation.
+        </p>
+      )}
+
       <ul className="mt-3 grid gap-3 md:grid-cols-2">
         {items.map((p, i) => {
-          const pct = (p.supplyDays / p.supplyTotal) * 100
+          const pct = p.supply_total ? (p.supply_days / p.supply_total) * 100 : 0
           return (
             <li
               key={p.id}
@@ -82,7 +97,7 @@ export function PrescriptionsView({ prescriptions }: { prescriptions: Prescripti
                 <div className="flex justify-between text-xs text-muted-foreground">
                   <span>Supply</span>
                   <span className="font-mono">
-                    {p.supplyDays}/{p.supplyTotal} days
+                    {p.supply_days}/{p.supply_total} days
                   </span>
                 </div>
                 <div className="mt-2 h-2 overflow-hidden rounded-full bg-muted">
@@ -95,22 +110,20 @@ export function PrescriptionsView({ prescriptions }: { prescriptions: Prescripti
 
               <div className="mt-6 flex items-center justify-between border-t pt-4">
                 <p className="text-xs text-muted-foreground">
-                  {p.prescribedBy} · {p.refillsLeft} refills left
+                  {p.doctor_name} · {p.refills_left} refills left
                 </p>
                 <Button
                   size="sm"
                   variant={p.status === 'Refill due' ? 'default' : 'outline'}
                   onClick={() =>
-                    p.refillsLeft === 0
-                      ? toast.success('Request sent', {
-                          description: `${p.prescribedBy} will review a renewal for ${p.name}.`,
-                        })
+                    p.refills_left === 0
+                      ? toast.success('Request sent', { description: `${p.doctor_name} will review a renewal for ${p.name}.` })
                       : setRefill(p)
                   }
                   className={cn('rounded-full', p.status === 'Refill due' && 'bg-brand hover:bg-brand/90')}
                 >
                   <RefreshCw data-icon="inline-start" />
-                  {p.refillsLeft === 0 ? 'Ask doctor' : 'Refill'}
+                  {p.refills_left === 0 ? 'Ask doctor' : 'Refill'}
                 </Button>
               </div>
             </li>
@@ -151,8 +164,8 @@ export function PrescriptionsView({ prescriptions }: { prescriptions: Prescripti
           </fieldset>
           <DialogFooter>
             <DialogClose render={<Button variant="ghost" className="rounded-full" />}>Cancel</DialogClose>
-            <Button className="rounded-full bg-brand hover:bg-brand/90" onClick={confirmRefill}>
-              Request refill
+            <Button className="rounded-full bg-brand hover:bg-brand/90" disabled={saving} onClick={confirmRefill}>
+              {saving ? 'Requesting…' : 'Request refill'}
             </Button>
           </DialogFooter>
         </DialogContent>

@@ -1,6 +1,7 @@
 'use client'
 
 import { useEffect, useRef, useState } from 'react'
+import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { FilePlus2, Lock, MessageSquare, Mic, MicOff, MonitorUp, PhoneOff, Send, User, Video, VideoOff } from 'lucide-react'
 import { toast } from 'sonner'
@@ -16,7 +17,10 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog'
-import { addSharedRx } from '@/lib/shared-rx'
+import { api } from '@/lib/api'
+import { initialsOf } from '@/lib/format'
+import { getSession } from '@/lib/session'
+import type { Appointment } from '@/lib/types'
 import { cn } from '@/lib/utils'
 
 type Message = { from: 'patient' | 'me'; text: string }
@@ -48,6 +52,8 @@ function patientReply(text: string): string {
 
 export default function DoctorConsultationPage() {
   const router = useRouter()
+  const [appt, setAppt] = useState<Appointment | null>(null)
+  const [state, setState] = useState<'loading' | 'ready' | 'none'>('loading')
   const [mic, setMic] = useState(true)
   const [cam, setCam] = useState(true)
   const [chatOpen, setChatOpen] = useState(true)
@@ -58,15 +64,32 @@ export default function DoctorConsultationPage() {
   const [seconds, setSeconds] = useState(0)
   const [draft, setDraft] = useState('')
   const [typing, setTyping] = useState(false)
+  const [saving, setSaving] = useState(false)
   const listRef = useRef<HTMLUListElement>(null)
-  const [messages, setMessages] = useState<Message[]>([
-    { from: 'me', text: 'Hi Gunjan, I can see your recent BP readings. How have you been feeling?' },
-    { from: 'patient', text: 'Better overall, a bit tired in the afternoons.' },
-  ])
+  const [messages, setMessages] = useState<Message[]>([])
+
+  const patientName = appt?.patient_name ?? 'Patient'
+  const firstName = patientName.split(' ')[0]
+  const doctorName = getSession()?.name ?? 'Doctor'
 
   useEffect(() => {
-    const id = setInterval(() => setSeconds((s) => s + 1), 1000)
-    return () => clearInterval(id)
+    const id = new URLSearchParams(window.location.search).get('appointment')
+    if (!id) {
+      setState('none')
+      return
+    }
+    api<Appointment>(`/appointments/${id}/`)
+      .then((a) => {
+        setAppt(a)
+        setMessages([{ from: 'me', text: `Hi ${a.patient_name.split(' ')[0]}, how have you been feeling?` }])
+        setState('ready')
+      })
+      .catch(() => setState('none'))
+  }, [])
+
+  useEffect(() => {
+    const t = setInterval(() => setSeconds((s) => s + 1), 1000)
+    return () => clearInterval(t)
   }, [])
 
   useEffect(() => {
@@ -96,20 +119,37 @@ export default function DoctorConsultationPage() {
     toast.success('Prescription added')
   }
 
-  function endCall() {
-    setEndOpen(false)
-    addSharedRx(
-      rxList.map((r, i) => ({
-        id: `doc-${Date.now()}-${i}`,
-        name: r.drug,
-        dosage: r.dosage,
-        frequency: r.frequency,
-        prescribedBy: 'Dr. Ananya Iyer',
-        date: new Date().toLocaleDateString('en-IN'),
-      })),
+  async function endCall() {
+    if (!appt) return
+    setSaving(true)
+    try {
+      for (const r of rxList) {
+        await api('/prescriptions/', {
+          method: 'POST',
+          body: { patient: appt.patient, name: r.drug, dosage: r.dosage, frequency: r.frequency },
+        })
+      }
+      await api(`/appointments/${appt.id}/complete/`, { method: 'POST' })
+      toast.success('Consultation ended', { description: `Duration ${time}. Visit saved.` })
+      router.push('/doctor')
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : 'Could not save the visit.')
+      setSaving(false)
+    }
+  }
+
+  if (state === 'loading') return null
+
+  if (state === 'none' || !appt) {
+    return (
+      <div className="flex min-h-svh flex-col items-center justify-center gap-4 p-6 text-center">
+        <p className="text-lg font-medium">No consultation selected</p>
+        <p className="max-w-sm text-sm text-muted-foreground">Open a consultation from your patient queue using the Start button.</p>
+        <Button nativeButton={false} render={<Link href="/doctor" />} className="rounded-full">
+          Back to overview
+        </Button>
+      </div>
     )
-    toast.success('Consultation ended', { description: `Duration ${time}. Visit saved.` })
-    router.push('/doctor')
   }
 
   const controls = [
@@ -130,15 +170,17 @@ export default function DoctorConsultationPage() {
             <span className="absolute inset-0 animate-pulse-ring rounded-full bg-brand/40" />
             <span className="absolute inset-4 rounded-full border border-background/20" />
             <span className="relative flex size-28 items-center justify-center rounded-full bg-gradient-to-br from-brand to-accent-foreground text-4xl font-medium text-primary-foreground shadow-2xl sm:size-36 sm:text-5xl">
-              GS
+              {initialsOf(patientName)}
             </span>
             <span className="absolute right-3 bottom-3 flex size-10 items-center justify-center rounded-full bg-background text-brand shadow-lg">
               <User className="size-5" aria-hidden="true" />
             </span>
           </div>
           <div className="text-center text-background">
-            <p className="text-lg font-medium">Gunjan Sahu</p>
-            <p className="text-sm text-background/60">34 yrs · BP follow-up</p>
+            <p className="text-lg font-medium">{patientName}</p>
+            <p className="text-sm text-background/60">
+              {appt.patient_age} yrs · {appt.reason || appt.patient_condition || 'Consultation'}
+            </p>
           </div>
         </div>
 
@@ -156,7 +198,7 @@ export default function DoctorConsultationPage() {
           {cam ? (
             <div className="flex h-full items-center justify-center">
               <span className="flex size-14 items-center justify-center rounded-full bg-brand text-lg font-medium text-primary-foreground">
-                AI
+                {initialsOf(doctorName)}
               </span>
             </div>
           ) : (
@@ -246,7 +288,7 @@ export default function DoctorConsultationPage() {
         <div className="flex min-h-0 flex-1 flex-col lg:w-80">
           <div className="border-b p-4">
             <p className="font-medium">Consultation chat</p>
-            <p className="text-xs text-muted-foreground">Messages are saved to the visit notes</p>
+            <p className="text-xs text-muted-foreground">Demo chat: patient replies are simulated</p>
           </div>
 
           <ul ref={listRef} className="flex min-h-48 flex-1 flex-col gap-2 overflow-y-auto p-4">
@@ -263,7 +305,7 @@ export default function DoctorConsultationPage() {
             ))}
             {typing && (
               <li className="self-start rounded-2xl rounded-bl-md bg-muted px-3.5 py-2.5 text-sm text-muted-foreground">
-                Gunjan is typing…
+                {firstName} is typing…
               </li>
             )}
           </ul>
@@ -317,7 +359,7 @@ export default function DoctorConsultationPage() {
           <form onSubmit={addRx} className="flex flex-col gap-4">
             <DialogHeader>
               <DialogTitle>New prescription</DialogTitle>
-              <DialogDescription>For Gunjan Sahu</DialogDescription>
+              <DialogDescription>For {patientName}</DialogDescription>
             </DialogHeader>
             <div className="flex flex-col gap-2">
               <Label htmlFor="drug">Medicine</Label>
@@ -341,21 +383,22 @@ export default function DoctorConsultationPage() {
         </DialogContent>
       </Dialog>
 
-      <Dialog open={endOpen} onOpenChange={setEndOpen}>
+      <Dialog open={endOpen} onOpenChange={(o) => !saving && setEndOpen(o)}>
         <DialogContent className="rounded-3xl sm:max-w-sm">
           <DialogHeader>
             <DialogTitle>End consultation?</DialogTitle>
             <DialogDescription>
-              Your notes and {rxList.length} prescription(s) will be saved to the patient&apos;s record.
+              The visit will be marked completed and {rxList.length} prescription(s) saved to {patientName}&apos;s account.
             </DialogDescription>
           </DialogHeader>
           <DialogFooter>
             <DialogClose render={<Button variant="ghost" className="rounded-full" />}>Stay</DialogClose>
             <Button
+              disabled={saving}
               className="rounded-full bg-destructive text-primary-foreground hover:bg-destructive/90"
               onClick={endCall}
             >
-              End call
+              {saving ? 'Saving…' : 'End call'}
             </Button>
           </DialogFooter>
         </DialogContent>

@@ -8,8 +8,8 @@ import { Logo } from '@/components/logo'
 import { LogoMark } from '@/components/logo-mark'
 import { Sheet, SheetContent, SheetTitle, SheetTrigger } from '@/components/ui/sheet'
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover'
-import { doctorProfile } from '@/lib/doctor-data'
-import { clearSession, getSession } from '@/lib/session'
+import { initialsOf } from '@/lib/format'
+import { clearSession, getSession, type Session } from '@/lib/session'
 import { cn } from '@/lib/utils'
 
 const nav = [
@@ -59,6 +59,7 @@ export function DoctorShell({ children }: { children: ReactNode }) {
   const pathname = usePathname()
   const router = useRouter()
   const [ready, setReady] = useState(false)
+  const [user, setUser] = useState<Session | null>(null)
   const [collapsed, setCollapsed] = useState(false)
   const [mobileOpen, setMobileOpen] = useState(false)
   const current = nav.find((n) => isActive(pathname, n.href))
@@ -67,7 +68,10 @@ export function DoctorShell({ children }: { children: ReactNode }) {
     const s = getSession()
     if (!s) router.replace('/login')
     else if ((s.role ?? 'Patient') !== 'Doctor') router.replace('/dashboard')
-    else setReady(true)
+    else {
+      setUser(s)
+      setReady(true)
+    }
   }, [router])
 
   function signOut() {
@@ -92,15 +96,12 @@ export function DoctorShell({ children }: { children: ReactNode }) {
         <div className={cn('flex h-16 items-center', collapsed ? 'justify-center' : 'px-1')}>
           {collapsed ? <LogoMark href="/doctor" /> : <Logo className="text-xs" href="/doctor" />}
         </div>
-
         <p className={cn('mt-4 px-3 text-[10px] tracking-[0.2em] text-muted-foreground uppercase', collapsed && 'sr-only')}>
           Doctor workspace
         </p>
-
         <nav aria-label="Doctor" className="mt-2 flex-1">
           <NavList collapsed={collapsed} />
         </nav>
-
         <button
           type="button"
           onClick={() => setCollapsed((c) => !c)}
@@ -159,14 +160,14 @@ export function DoctorShell({ children }: { children: ReactNode }) {
                 }
               >
                 <span className="flex size-8 items-center justify-center rounded-full bg-brand-soft text-xs font-medium text-accent-foreground">
-                  {doctorProfile.initials}
+                  {initialsOf(user?.name ?? '')}
                 </span>
-                <span className="hidden text-sm sm:block">{doctorProfile.name}</span>
+                <span className="hidden text-sm sm:block">{user?.name ?? ''}</span>
               </PopoverTrigger>
               <PopoverContent align="end" className="w-64 rounded-2xl p-2">
                 <div className="px-3 py-2">
-                  <p className="text-sm font-medium">{doctorProfile.name}</p>
-                  <p className="text-xs text-muted-foreground">Doctor · {doctorProfile.specialty}</p>
+                  <p className="text-sm font-medium">{user?.name ?? ''}</p>
+                  <p className="text-xs text-muted-foreground">Doctor</p>
                 </div>
                 <button
                   type="button"

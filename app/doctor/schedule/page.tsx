@@ -1,42 +1,43 @@
-import { queue } from '@/lib/doctor-data'
-import { cn } from '@/lib/utils'
+'use client'
 
-const hours = ['09:00', '10:00', '11:00', '12:00', '13:00', '14:00', '15:00', '16:00', '17:00']
+import { shortDate, shortTime } from '@/lib/format'
+import { useApi } from '@/lib/use-api'
+import type { Appointment, Paged } from '@/lib/types'
 
 export default function SchedulePage() {
+  const { data, loading } = useApi<Paged<Appointment>>('/appointments/?status=Upcoming')
+  const items = (data?.results ?? []).slice().sort((a, b) => (a.date + a.time).localeCompare(b.date + b.time))
+  const days = Array.from(new Set(items.map((a) => a.date)))
+
   return (
     <section className="rounded-[1.75rem] bg-card p-5 sm:p-6">
-      <h2 className="font-medium">Today&apos;s schedule</h2>
-      <ul className="mt-4 divide-y">
-        {hours.map((h) => {
-          const hour = h.slice(0, 2)
-          const items = queue.filter((q) => q.time.startsWith(hour))
-          return (
-            <li key={h} className="flex min-h-14 gap-4 py-2.5">
-              <span className="w-14 shrink-0 pt-1 font-mono text-sm text-muted-foreground">{h}</span>
-              <div className="flex flex-1 flex-col gap-2">
-                {items.length === 0 && <span className="pt-1 text-xs text-muted-foreground/60">Free</span>}
-                {items.map((q) => (
-                  <div
-                    key={q.id}
-                    className={cn(
-                      'rounded-2xl px-4 py-3',
-                      q.status === 'Done' ? 'bg-success/10' : 'bg-brand-soft',
-                    )}
-                  >
-                    <p className="text-sm font-medium">
-                      {q.time} · {q.patient}
-                    </p>
-                    <p className="text-xs text-muted-foreground">
-                      {q.reason} · {q.type}
-                    </p>
-                  </div>
+      <h2 className="font-medium">Upcoming schedule</h2>
+      {loading && <p className="mt-4 text-sm text-muted-foreground">Loading…</p>}
+      {!loading && items.length === 0 && <p className="mt-4 text-sm text-muted-foreground">Nothing scheduled yet.</p>}
+      <div className="mt-4 flex flex-col gap-6">
+        {days.map((d) => (
+          <div key={d}>
+            <p className="mb-2 text-xs tracking-[0.2em] text-muted-foreground uppercase">
+              {shortDate(d)}, {d.slice(0, 4)}
+            </p>
+            <ul className="divide-y rounded-2xl border">
+              {items
+                .filter((a) => a.date === d)
+                .map((q) => (
+                  <li key={q.id} className="flex gap-4 px-4 py-3">
+                    <span className="w-14 shrink-0 pt-0.5 font-mono text-sm text-muted-foreground">{shortTime(q.time)}</span>
+                    <div>
+                      <p className="text-sm font-medium">{q.patient_name}</p>
+                      <p className="text-xs text-muted-foreground">
+                        {q.reason || q.patient_condition} · {q.kind}
+                      </p>
+                    </div>
+                  </li>
                 ))}
-              </div>
-            </li>
-          )
-        })}
-      </ul>
+            </ul>
+          </div>
+        ))}
+      </div>
     </section>
   )
 }

@@ -5,7 +5,8 @@ import { toast } from 'sonner'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
-import { findAccount, saveAccount, saveSession } from '@/lib/session'
+import { api, type AuthResponse } from '@/lib/api'
+import { saveAuth } from '@/lib/session'
 import { cn } from '@/lib/utils'
 
 const modes = ['Sign in', 'Create account'] as const
@@ -17,27 +18,33 @@ export function AuthForm() {
   const [loading, setLoading] = useState(false)
   const isSignup = mode === 'Create account'
 
-  function submit(e: React.FormEvent<HTMLFormElement>) {
+  async function submit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault()
     const data = new FormData(e.currentTarget)
     const email = String(data.get('email') ?? '').trim().toLowerCase()
-    const typedName = String(data.get('name') ?? '').trim()
+    const password = String(data.get('password') ?? '')
+    const name = String(data.get('name') ?? '').trim()
 
     setLoading(true)
-
-    let name = typedName || email.split('@')[0]
-    if (isSignup) {
-      saveAccount({ name, email, role })
-    } else {
-      const found = findAccount(email)
-      if (found) name = found.name
-    }
-    saveSession({ name, email, role }, true)
-
-    setTimeout(() => {
+    try {
+      const res = isSignup
+        ? await api<AuthResponse>('/auth/register/', {
+            method: 'POST',
+            body: { name, email, password, role },
+            auth: false,
+          })
+        : await api<AuthResponse>('/auth/login/', {
+            method: 'POST',
+            body: { email, password },
+            auth: false,
+          })
+      saveAuth(res)
       toast.success(isSignup ? 'Account created' : 'Welcome back')
-      window.location.assign(role === 'Doctor' ? '/doctor' : '/dashboard')
-    }, 600)
+      window.location.assign(res.user.role === 'Doctor' ? '/doctor' : '/dashboard')
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : 'Could not sign in.')
+      setLoading(false)
+    }
   }
 
   return (
@@ -63,33 +70,31 @@ export function AuthForm() {
       <div>
         <h1 className="text-2xl font-medium tracking-tight">{isSignup ? 'Create your account' : 'Welcome back'}</h1>
         <p className="mt-1 text-sm text-muted-foreground">
-          {role === 'Doctor'
-            ? 'Sign in to open your doctor workspace.'
-            : isSignup
-              ? 'Start your first virtual consultation in minutes.'
-              : 'Sign in to open your patient portal.'}
+          {isSignup ? 'Start your first virtual consultation in minutes.' : 'Sign in to open your portal.'}
         </p>
       </div>
 
-      <fieldset>
-        <legend className="mb-2 text-sm font-medium">I am a</legend>
-        <div className="grid grid-cols-2 gap-2">
-          {roles.map((r) => (
-            <button
-              key={r}
-              type="button"
-              aria-pressed={role === r}
-              onClick={() => setRole(r)}
-              className={cn(
-                'rounded-xl border py-2.5 text-sm transition-all',
-                role === r ? 'border-foreground bg-foreground text-background' : 'hover:border-foreground/40',
-              )}
-            >
-              {r}
-            </button>
-          ))}
-        </div>
-      </fieldset>
+      {isSignup && (
+        <fieldset>
+          <legend className="mb-2 text-sm font-medium">I am a</legend>
+          <div className="grid grid-cols-2 gap-2">
+            {roles.map((r) => (
+              <button
+                key={r}
+                type="button"
+                aria-pressed={role === r}
+                onClick={() => setRole(r)}
+                className={cn(
+                  'rounded-xl border py-2.5 text-sm transition-all',
+                  role === r ? 'border-foreground bg-foreground text-background' : 'hover:border-foreground/40',
+                )}
+              >
+                {r}
+              </button>
+            ))}
+          </div>
+        </fieldset>
+      )}
 
       <form onSubmit={submit} className="flex flex-col gap-4">
         {isSignup && (
@@ -120,9 +125,11 @@ export function AuthForm() {
         </Button>
       </form>
 
-      <p className="text-center text-xs text-muted-foreground">
-        Demo only: no real security. Accounts are stored in your browser.
-      </p>
+      {!isSignup && (
+        <p className="text-center text-xs text-muted-foreground">
+          Demo: patient@careconnect.test or doctor@careconnect.test, password Demo@12345
+        </p>
+      )}
     </div>
   )
 }

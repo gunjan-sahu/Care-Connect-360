@@ -4,20 +4,10 @@ import { useEffect, useState, type ReactNode } from 'react'
 import Link from 'next/link'
 import { usePathname, useRouter } from 'next/navigation'
 import { clearSession, getSession, type Session } from '@/lib/session'
-import { usePersisted } from '@/lib/persist'
-import { prescriptions } from '@/lib/data'
-import {
-  Bell,
-  CalendarDays,
-  ChevronsLeft,
-  LayoutGrid,
-  LogOut,
-  Pill,
-  Plus,
-  Receipt,
-  Search,
-  Video,
-} from 'lucide-react'
+import { useApi } from '@/lib/use-api'
+import { initialsOf } from '@/lib/format'
+import type { Paged, Prescription } from '@/lib/types'
+import { Bell, CalendarDays, ChevronsLeft, LayoutGrid, LogOut, Pill, Plus, Receipt, Search, Video } from 'lucide-react'
 import { Logo } from '@/components/logo'
 import { LogoMark } from '@/components/logo-mark'
 import { Button } from '@/components/ui/button'
@@ -34,16 +24,16 @@ const nav = [
   { href: '/dashboard/billing', label: 'Billing', icon: Receipt },
 ]
 
-const notifications = [
-  { t: 'Dr. Iyer is ready in 15 min', d: 'Video consultation · 14:30', unread: true },
-  { t: 'Atorvastatin refill due', d: '4 days of supply left', unread: true },
-  { t: 'Invoice INV-2048 issued', d: '₹300.00 after insurance', unread: false },
-]
-
-function NavList({ collapsed, onNavigate }: { collapsed?: boolean; onNavigate?: () => void }) {
+function NavList({
+  collapsed,
+  onNavigate,
+  refillCount,
+}: {
+  collapsed?: boolean
+  onNavigate?: () => void
+  refillCount: number
+}) {
   const pathname = usePathname()
-  const [rx] = usePersisted('cc360-prescriptions', prescriptions)
-  const refillCount = rx.filter((p) => p.status === 'Refill due').length
   return (
     <ul className="flex flex-col gap-1">
       {nav.map((item) => {
@@ -85,6 +75,8 @@ export function DashboardShell({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<Session | null>(null)
   const pathname = usePathname()
   const router = useRouter()
+  const refills = useApi<Paged<Prescription>>('/prescriptions/?status=Refill%20due')
+  const refillCount = refills.data?.count ?? 0
   const current = nav.find((n) => (n.href === '/dashboard' ? pathname === n.href : pathname.startsWith(n.href)))
 
   useEffect(() => {
@@ -94,13 +86,8 @@ export function DashboardShell({ children }: { children: ReactNode }) {
     else setUser(s)
   }, [router])
 
-  const name = user?.name ?? 'Gunjan Sahu'
-  const initials = name
-    .split(' ')
-    .map((p) => p[0])
-    .join('')
-    .slice(0, 2)
-    .toUpperCase()
+  const name = user?.name ?? ''
+  const initials = initialsOf(name)
 
   function signOut() {
     clearSession()
@@ -133,7 +120,7 @@ export function DashboardShell({ children }: { children: ReactNode }) {
         />
 
         <nav aria-label="Dashboard" className="mt-6 flex-1">
-          <NavList collapsed={collapsed} />
+          <NavList collapsed={collapsed} refillCount={refillCount} />
         </nav>
 
         <button
@@ -168,7 +155,7 @@ export function DashboardShell({ children }: { children: ReactNode }) {
               <SheetTitle className="sr-only">Navigation</SheetTitle>
               <Logo className="px-1 text-xs" />
               <nav aria-label="Dashboard mobile" className="flex-1">
-                <NavList onNavigate={() => setMobileOpen(false)} />
+                <NavList onNavigate={() => setMobileOpen(false)} refillCount={refillCount} />
               </nav>
             </SheetContent>
           </Sheet>
@@ -194,26 +181,31 @@ export function DashboardShell({ children }: { children: ReactNode }) {
                   <button
                     type="button"
                     className="relative flex size-10 items-center justify-center rounded-full border transition-colors hover:bg-muted"
-                    aria-label="Notifications, 2 unread"
+                    aria-label={refillCount > 0 ? 'Notifications, 1 unread' : 'Notifications'}
                   />
                 }
               >
                 <Bell className="size-4" />
-                <span className="absolute top-2 right-2.5 size-2 rounded-full bg-brand ring-2 ring-card" />
+                {refillCount > 0 && <span className="absolute top-2 right-2.5 size-2 rounded-full bg-brand ring-2 ring-card" />}
               </PopoverTrigger>
               <PopoverContent align="end" className="w-80 rounded-2xl p-2">
                 <p className="px-3 pt-2 pb-1 text-sm font-medium">Notifications</p>
-                <ul>
-                  {notifications.map((n) => (
-                    <li key={n.t} className="flex gap-3 rounded-xl px-3 py-2.5 transition-colors hover:bg-muted">
-                      <span className={cn('mt-1.5 size-2 shrink-0 rounded-full', n.unread ? 'bg-brand' : 'bg-border')} />
-                      <span>
-                        <span className="block text-sm">{n.t}</span>
-                        <span className="block text-xs text-muted-foreground">{n.d}</span>
+                {refillCount > 0 ? (
+                  <Link
+                    href="/dashboard/prescriptions"
+                    className="flex gap-3 rounded-xl px-3 py-2.5 transition-colors hover:bg-muted"
+                  >
+                    <span className="mt-1.5 size-2 shrink-0 rounded-full bg-brand" />
+                    <span>
+                      <span className="block text-sm">
+                        {refillCount} prescription{refillCount === 1 ? '' : 's'} due for refill
                       </span>
-                    </li>
-                  ))}
-                </ul>
+                      <span className="block text-xs text-muted-foreground">Tap to open Prescriptions</span>
+                    </span>
+                  </Link>
+                ) : (
+                  <p className="px-3 py-3 text-sm text-muted-foreground">You&apos;re all caught up.</p>
+                )}
               </PopoverContent>
             </Popover>
 
@@ -235,7 +227,7 @@ export function DashboardShell({ children }: { children: ReactNode }) {
               <PopoverContent align="end" className="w-64 rounded-2xl p-2">
                 <div className="px-3 py-2">
                   <p className="text-sm font-medium">{name}</p>
-                  <p className="text-xs text-muted-foreground">Patient · ID 40219</p>
+                  <p className="text-xs text-muted-foreground">Patient · ID {user?.profile_id ?? '—'}</p>
                 </div>
                 <button
                   type="button"

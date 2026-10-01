@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, type ReactElement } from 'react'
+import { useEffect, useMemo, useState, type ReactElement } from 'react'
 import { ArrowLeft, ArrowRight, Check, Video, MessageSquare } from 'lucide-react'
 import { toast } from 'sonner'
 import {
@@ -14,43 +14,117 @@ import {
 import { Button } from '@/components/ui/button'
 import { Textarea } from '@/components/ui/textarea'
 import { Label } from '@/components/ui/label'
-import { doctors, specialties } from '@/lib/data'
+import { api } from '@/lib/api'
+import { getSession } from '@/lib/session'
+import { notifyChanged } from '@/lib/use-api'
+import type { Doctor, Paged } from '@/lib/types'
 import { cn } from '@/lib/utils'
 
-const days = ['Wed 30', 'Thu 01', 'Fri 02', 'Mon 05', 'Tue 06']
+const specialties = ['General Practice', 'Cardiology', 'Dermatology', 'Psychiatry', 'Pediatrics', 'Nutrition']
 const slots = ['09:00', '10:30', '11:45', '14:30', '16:00', '17:15']
 
+function nextDays() {
+  return Array.from({ length: 5 }, (_, i) => {
+    const d = new Date()
+    d.setDate(d.getDate() + i + 1)
+    const iso = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`
+    return {
+      iso,
+      dow: d.toLocaleDateString('en-US', { weekday: 'short' }),
+      day: String(d.getDate()).padStart(2, '0'),
+    }
+  })
+}
+
 export function BookingDialog({ trigger }: { trigger: ReactElement }) {
+  const days = useMemo(nextDays, [])
   const [open, setOpen] = useState(false)
   const [step, setStep] = useState(0)
   const [specialty, setSpecialty] = useState(specialties[0])
+  const [doctors, setDoctors] = useState<Doctor[]>([])
+  const [doctorId, setDoctorId] = useState<number | null>(null)
   const [mode, setMode] = useState<'Video' | 'Chat'>('Video')
-  const [day, setDay] = useState(days[0])
+  const [day, setDay] = useState(days[0].iso)
   const [slot, setSlot] = useState<string | null>(null)
   const [reason, setReason] = useState('')
+  const [saving, setSaving] = useState(false)
+  const [doctorSearch, setDoctorSearch] = useState('')
+  const [debounced, setDebounced] = useState('')
 
-  const doctor = doctors.find((d) => d.specialty === specialty) ?? doctors[0]
+  const doctor = doctors.find((d) => d.id === doctorId)
+  const dayInfo = days.find((d) => d.iso === day) ?? days[0]
+
+  useEffect(() => {
+    const t = setTimeout(() => setDebounced(doctorSearch.trim()), 300)
+    return () => clearTimeout(t)
+  }, [doctorSearch])
+
+  useEffect(() => {
+    if (!open) return
+    let cancelled = false
+    const query = debounced
+      ? `search=${encodeURIComponent(debounced)}`
+      : `specialty=${encodeURIComponent(specialty)}`
+    api<Paged<Doctor>>(`/doctors/?${query}`)
+      .then((r) => {
+        if (cancelled) return
+        setDoctors(r.results)
+        setDoctorId(r.results[0]?.id ?? null)
+      })
+      .catch(() => {
+        if (!cancelled) setDoctors([])
+      })
+    return () => {
+      cancelled = true
+    }
+  }, [open, specialty, debounced])
 
   function reset() {
     setStep(0)
     setSlot(null)
     setReason('')
+    setDoctorSearch('')
   }
 
-  function confirm() {
-    setOpen(false)
-    toast.success('Consultation booked', {
-      description: `${doctor.name} · ${day} at ${slot} · ${mode}`,
-    })
-    setTimeout(reset, 300)
+  async function confirm() {
+    if (!doctor || !slot) return
+    setSaving(true)
+    try {
+      await api('/appointments/', {
+        method: 'POST',
+        body: { doctor: doctor.id, date: day, time: slot, kind: mode, reason },
+      })
+      toast.success('Consultation booked', {
+        description: `${doctor.name} · ${dayInfo.dow} ${dayInfo.day} at ${slot} · ${mode}`,
+      })
+      notifyChanged()
+      setOpen(false)
+      setTimeout(reset, 300)
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : 'Could not book. Try again.')
+    } finally {
+      setSaving(false)
+    }
   }
 
-  const canContinue = step === 0 || (step === 1 && slot !== null) || step === 2
+  const canContinue = (step === 0 && doctor !== undefined) || (step === 1 && slot !== null) || step === 2
 
   return (
     <Dialog
       open={open}
       onOpenChange={(next) => {
+        if (next) {
+          const s = getSession()
+          if (!s) {
+            toast('Please sign in to book a consultation')
+            window.location.assign('/login')
+            return
+          }
+          if (s.role === 'Doctor') {
+            toast.error('Doctor accounts cannot book consultations.')
+            return
+          }
+        }
         setOpen(next)
         if (!next) setTimeout(reset, 300)
       }}
@@ -69,9 +143,9 @@ export function BookingDialog({ trigger }: { trigger: ReactElement }) {
             {step === 2 && 'Review & confirm'}
           </DialogTitle>
           <DialogDescription>
-            {step === 0 && 'Choose a specialty and how you want to meet.'}
-            {step === 1 && `Next available with ${doctor.name}.`}
-            {step === 2 && 'You can reschedule up to 2 hours before.'}
+            {step === 0 && 'Choose a specialty, a doctor and how you want to meet.'}
+            {step === 1 && `Available with ${doctor?.name ?? 'your doctor'}.`}
+            {step === 2 && 'This will be saved to your account.'}
           </DialogDescription>
         </DialogHeader>
 
@@ -79,10 +153,7 @@ export function BookingDialog({ trigger }: { trigger: ReactElement }) {
           {[0, 1, 2].map((i) => (
             <span
               key={i}
-              className={cn(
-                'h-1 flex-1 rounded-full bg-muted transition-colors duration-500',
-                i <= step && 'bg-brand',
-              )}
+              className={cn('h-1 flex-1 rounded-full bg-muted transition-colors duration-500', i <= step && 'bg-brand')}
             />
           ))}
         </div>
@@ -109,6 +180,29 @@ export function BookingDialog({ trigger }: { trigger: ReactElement }) {
                   ))}
                 </div>
               </fieldset>
+              <div className="flex flex-col gap-2">
+                <Label htmlFor="doctor-search">Doctor</Label>
+                <input
+                  id="doctor-search"
+                  value={doctorSearch}
+                  onChange={(e) => setDoctorSearch(e.target.value)}
+                  placeholder="Search by name, e.g. Purvi"
+                  className="h-11 rounded-xl border bg-transparent px-3 text-sm outline-none focus:ring-2 focus:ring-ring/40"
+                />
+                <select
+                  id="doctor"
+                  value={doctorId ?? ''}
+                  onChange={(e) => setDoctorId(Number(e.target.value))}
+                  className="h-11 rounded-xl border bg-transparent px-3 text-sm"
+                >
+                  {doctors.length === 0 && <option value="">No doctors found</option>}
+                  {doctors.map((d) => (
+                    <option key={d.id} value={d.id}>
+                      {d.name} · ★ {d.rating}
+                    </option>
+                  ))}
+                </select>
+              </div>
               <fieldset className="flex flex-col gap-2">
                 <legend className="mb-2 text-sm font-medium">Consultation type</legend>
                 <div className="grid grid-cols-2 gap-2">
@@ -145,17 +239,17 @@ export function BookingDialog({ trigger }: { trigger: ReactElement }) {
               <div className="no-scrollbar -mx-1 flex gap-2 overflow-x-auto px-1">
                 {days.map((d) => (
                   <button
-                    key={d}
+                    key={d.iso}
                     type="button"
-                    onClick={() => setDay(d)}
-                    aria-pressed={day === d}
+                    onClick={() => setDay(d.iso)}
+                    aria-pressed={day === d.iso}
                     className={cn(
                       'flex min-w-16 flex-col items-center rounded-2xl border px-3 py-2.5 transition-all duration-300',
-                      day === d && 'border-foreground bg-foreground text-background',
+                      day === d.iso && 'border-foreground bg-foreground text-background',
                     )}
                   >
-                    <span className="text-xs opacity-70">{d.split(' ')[0]}</span>
-                    <span className="text-lg font-medium">{d.split(' ')[1]}</span>
+                    <span className="text-xs opacity-70">{d.dow}</span>
+                    <span className="text-lg font-medium">{d.day}</span>
                   </button>
                 ))}
               </div>
@@ -191,9 +285,9 @@ export function BookingDialog({ trigger }: { trigger: ReactElement }) {
           {step === 2 && (
             <dl className="divide-y rounded-2xl border">
               {[
-                ['Doctor', doctor.name],
+                ['Doctor', doctor?.name ?? ''],
                 ['Specialty', specialty],
-                ['When', `${day} · ${slot}`],
+                ['When', `${dayInfo.dow} ${dayInfo.day} · ${slot}`],
                 ['Type', mode],
                 ['Estimated cost', '₹800 · insurance applied at checkout'],
               ].map(([k, v]) => (
@@ -217,18 +311,14 @@ export function BookingDialog({ trigger }: { trigger: ReactElement }) {
             Back
           </Button>
           {step < 2 ? (
-            <Button
-              className="h-10 rounded-full px-5"
-              disabled={!canContinue}
-              onClick={() => setStep((s) => s + 1)}
-            >
+            <Button className="h-10 rounded-full px-5" disabled={!canContinue} onClick={() => setStep((s) => s + 1)}>
               Continue
               <ArrowRight data-icon="inline-end" />
             </Button>
           ) : (
-            <Button className="h-10 rounded-full bg-brand px-5 hover:bg-brand/90" onClick={confirm}>
+            <Button className="h-10 rounded-full bg-brand px-5 hover:bg-brand/90" disabled={saving} onClick={confirm}>
               <Check data-icon="inline-start" />
-              Confirm booking
+              {saving ? 'Booking…' : 'Confirm booking'}
             </Button>
           )}
         </div>
