@@ -1,5 +1,5 @@
 from datetime import date
-
+from django.db.models import F
 from rest_framework import status, viewsets
 from rest_framework.decorators import action, api_view, permission_classes
 from rest_framework.exceptions import PermissionDenied
@@ -62,14 +62,20 @@ class ScopedMixin:
 
 
 class DoctorViewSet(viewsets.ReadOnlyModelViewSet):
-    queryset = Doctor.objects.all().order_by("name")
+    queryset = Doctor.objects.all()
     serializer_class = DoctorSerializer
     permission_classes = [IsAuthenticated]
 
     def get_queryset(self):
         qs = super().get_queryset()
+        search = self.request.query_params.get("search")
         specialty = self.request.query_params.get("specialty")
-        return qs.filter(specialty=specialty) if specialty else qs
+        if search:
+            qs = qs.filter(name__icontains=search)
+        elif specialty:
+            qs = qs.filter(specialty=specialty)
+        # Doctors who registered an account come first, then the dataset doctors
+        return qs.order_by(F("user").asc(nulls_last=True), "name")
 
 
 class PatientViewSet(viewsets.ReadOnlyModelViewSet):
