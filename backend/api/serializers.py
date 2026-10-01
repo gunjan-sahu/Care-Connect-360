@@ -22,17 +22,18 @@ class PatientSerializer(serializers.ModelSerializer):
             "id", "name", "age", "gender", "blood_type",
             "medical_condition", "insurance_provider", "allergies",
         ]
-
-
 class AppointmentSerializer(serializers.ModelSerializer):
     doctor_name = serializers.CharField(source="doctor.name", read_only=True)
     specialty = serializers.CharField(source="doctor.specialty", read_only=True)
     patient_name = serializers.CharField(source="patient.name", read_only=True)
+    patient_age = serializers.IntegerField(source="patient.age", read_only=True)
+    patient_condition = serializers.CharField(source="patient.medical_condition", read_only=True)
 
     class Meta:
         model = Appointment
         fields = [
-            "id", "patient", "patient_name", "doctor", "doctor_name", "specialty",
+            "id", "patient", "patient_name", "patient_age", "patient_condition",
+            "doctor", "doctor_name", "specialty",
             "date", "time", "kind", "status", "reason",
             "room_number", "discharge_date", "test_results",
         ]

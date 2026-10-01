@@ -3,7 +3,6 @@ from django.http import JsonResponse
 from django.urls import include, path
 from rest_framework.routers import DefaultRouter
 from rest_framework_simplejwt.views import TokenRefreshView
-
 from api.auth_views import login_view, me, register
 from api.views import (
     AppointmentViewSet,
@@ -11,6 +10,7 @@ from api.views import (
     InvoiceViewSet,
     PatientViewSet,
     PrescriptionViewSet,
+    doctor_stats,
 )
 
 router = DefaultRouter()
@@ -20,10 +20,8 @@ router.register("appointments", AppointmentViewSet, basename="appointment")
 router.register("prescriptions", PrescriptionViewSet, basename="prescription")
 router.register("invoices", InvoiceViewSet, basename="invoice")
 
-
 def health(request):
     return JsonResponse({"status": "ok"})
-
 
 urlpatterns = [
     path("admin/", admin.site.urls),
@@ -32,5 +30,6 @@ urlpatterns = [
     path("api/auth/login/", login_view),
     path("api/auth/refresh/", TokenRefreshView.as_view()),
     path("api/auth/me/", me),
+    path("api/doctor/stats/", doctor_stats),
     path("api/", include(router.urls)),
 ]
