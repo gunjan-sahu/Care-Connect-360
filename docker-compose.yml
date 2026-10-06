@@ -5,9 +5,9 @@ services:
     ports:
       - "1521:1521"
     environment:
-      ORACLE_PASSWORD: ChangeMe_123
-      APP_USER: careconnect
-      APP_USER_PASSWORD: CareConnect_123
+      ORACLE_PASSWORD: ${ORACLE_PASSWORD}
+      APP_USER: ${DB_USER}
+      APP_USER_PASSWORD: ${DB_PASSWORD}
     volumes:
       - oracle-data:/opt/oracle/oradata
 
