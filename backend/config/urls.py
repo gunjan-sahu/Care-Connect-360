@@ -11,6 +11,7 @@ from api.views import (
     PatientViewSet,
     PrescriptionViewSet,
     doctor_stats,
+    specialties,
 )
 
 router = DefaultRouter()
@@ -31,5 +32,6 @@ urlpatterns = [
     path("api/auth/refresh/", TokenRefreshView.as_view()),
     path("api/auth/me/", me),
     path("api/doctor/stats/", doctor_stats),
+    path("api/specialties/", specialties),
     path("api/", include(router.urls)),
 ]

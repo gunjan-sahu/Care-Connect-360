@@ -16,6 +16,7 @@ export function AuthForm() {
   const [mode, setMode] = useState<(typeof modes)[number]>('Sign in')
   const [role, setRole] = useState<(typeof roles)[number]>('Patient')
   const [loading, setLoading] = useState(false)
+  const [specialty, setSpecialty] = useState('General Practice')
   const isSignup = mode === 'Create account'
 
   async function submit(e: React.FormEvent<HTMLFormElement>) {
@@ -30,7 +31,7 @@ export function AuthForm() {
       const res = isSignup
         ? await api<AuthResponse>('/auth/register/', {
             method: 'POST',
-            body: { name, email, password, role },
+            body: { name, email, password, role, specialty },
             auth: false,
           })
         : await api<AuthResponse>('/auth/login/', {
@@ -101,6 +102,21 @@ export function AuthForm() {
           <div className="flex flex-col gap-2">
             <Label htmlFor="name">Full name</Label>
             <Input id="name" name="name" autoComplete="name" required className="h-11 rounded-xl" />
+          </div>
+        )}
+        {isSignup && role === 'Doctor' && (
+          <div className="flex flex-col gap-2">
+            <Label htmlFor="specialty">Specialty</Label>
+            <select
+              id="specialty"
+              value={specialty}
+              onChange={(e) => setSpecialty(e.target.value)}
+              className="h-11 rounded-xl border bg-transparent px-3 text-sm"
+            >
+              {specialtyOptions.map((s) => (
+                <option key={s}>{s}</option>
+              ))}
+            </select>
           </div>
         )}
         <div className="flex flex-col gap-2">

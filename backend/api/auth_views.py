@@ -39,6 +39,7 @@ class RegisterSerializer(serializers.Serializer):
     role = serializers.ChoiceField(choices=User.Role.choices, default=User.Role.PATIENT)
     age = serializers.IntegerField(min_value=0, max_value=120, default=30)
     gender = serializers.CharField(max_length=20, default="Not specified")
+    specialty = serializers.CharField(max_length=80, default="General Practice")
 
     def validate_email(self, value):
         value = value.strip().lower()
@@ -64,7 +65,7 @@ def register(request):
         )
         if data["role"] == User.Role.DOCTOR:
             doctor_name = data["name"] if data["name"].startswith("Dr") else f"Dr. {data['name']}"
-            Doctor.objects.create(user=user, name=doctor_name)
+            Doctor.objects.create(user=user, name=doctor_name, specialty=data["specialty"])
         else:
             Patient.objects.create(
                 user=user, name=data["name"], age=data["age"], gender=data["gender"]
@@ -78,7 +79,11 @@ def register(request):
 def login_view(request):
     email = str(request.data.get("email", "")).strip().lower()
     password = request.data.get("password", "")
-    user = authenticate(username=email, password=password)
+    match = (
+        User.objects.filter(email__iexact=email).first()
+        or User.objects.filter(username__iexact=email).first()
+    )
+    user = authenticate(username=match.username, password=password) if match else None
     if user is None:
         return Response({"detail": "Wrong email or password."}, status=401)
     return Response(tokens_for(user))

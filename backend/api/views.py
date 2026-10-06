@@ -275,3 +275,9 @@ def doctor_stats(request):
             "months": months,
         }
     )
+
+@api_view(["GET"])
+@permission_classes([IsAuthenticated])
+def specialties(request):
+    names = Doctor.objects.values_list("specialty", flat=True).distinct().order_by("specialty")
+    return Response(list(names))

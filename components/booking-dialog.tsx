@@ -20,7 +20,7 @@ import { notifyChanged } from '@/lib/use-api'
 import type { Doctor, Paged } from '@/lib/types'
 import { cn } from '@/lib/utils'
 
-const specialties = ['General Practice', 'Cardiology', 'Dermatology', 'Psychiatry', 'Pediatrics', 'Nutrition']
+const FALLBACK = ['General Practice']
 const slots = ['09:00', '10:30', '11:45', '14:30', '16:00', '17:15']
 
 function nextDays() {
@@ -40,7 +40,8 @@ export function BookingDialog({ trigger }: { trigger: ReactElement }) {
   const days = useMemo(nextDays, [])
   const [open, setOpen] = useState(false)
   const [step, setStep] = useState(0)
-  const [specialty, setSpecialty] = useState(specialties[0])
+  const [specialties, setSpecialties] = useState<string[]>(FALLBACK)
+  const [specialty, setSpecialty] = useState(FALLBACK[0])
   const [doctors, setDoctors] = useState<Doctor[]>([])
   const [doctorId, setDoctorId] = useState<number | null>(null)
   const [mode, setMode] = useState<'Video' | 'Chat'>('Video')
@@ -53,6 +54,17 @@ export function BookingDialog({ trigger }: { trigger: ReactElement }) {
 
   const doctor = doctors.find((d) => d.id === doctorId)
   const dayInfo = days.find((d) => d.iso === day) ?? days[0]
+
+  useEffect(() => {
+    if (!open) return
+    api<string[]>('/specialties/')
+      .then((list) => {
+        if (list.length === 0) return
+        setSpecialties(list)
+        setSpecialty((cur) => (list.includes(cur) ? cur : list[0]))
+      })
+      .catch(() => {})
+  }, [open])
 
   useEffect(() => {
     const t = setTimeout(() => setDebounced(doctorSearch.trim()), 300)
@@ -325,4 +337,4 @@ export function BookingDialog({ trigger }: { trigger: ReactElement }) {
       </DialogContent>
     </Dialog>
   )
-}
+} 
